@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- ADMIN ----------
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(EDITOR)
+  active       Boolean   @default(true)
+  avatar       String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  resource   String
+  resourceId String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([resource, resourceId])
+}
+
+// ---------- CUSTOMERS ----------
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?   @unique
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  orders    Order[]
+  reviews   Review[]
+  wishlist  WishlistItem[]
+}
+
+// ---------- CATALOGUE ----------
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  image       String?
+  parentId    String?
+  parent      Category?  @relation("CategoryToSub", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToSub")
+  active      Boolean    @default(true)
+  position    Int        @default(0)
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([parentId])
+}
+
+model Brand {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  logo        String?
+  active      Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  OUT_OF_STOCK
+  ARCHIVED
+  COMING_SOON
+  UNAVAILABLE
+}
+
+enum SalesMethod {
+  WHATSAPP
+  CONTACT
+  PHONE
+  CHECKOUT
+  DISABLED
+}
+
+enum PriceVisibility {
+  SHOW_PRICE
+  CONTACT_FOR_PRICE
+}
+
+model Product {
+  id                String          @id @default(cuid())
+  name              String
+  slug              String          @unique
+  description       String
+  shortDescription  String?
+  price             Int // stored in kobo (smallest currency unit)
+  compareAtPrice    Int?
+  currency          String          @default("NGN")
+  sku               String          @unique
+  stock             Int             @default(0)
+  status            ProductStatus   @default(DRAFT)
+  featured          Boolean         @default(false)
+  published         Boolean         @default(false)
+  salesMethod       SalesMethod     @default(WHATSAPP)
+  priceVisibility   PriceVisibility @default(SHOW_PRICE)
+  brandId           String?
+  brand             Brand?          @relation(fields: [brandId], references: [id])
+  categoryId        String?
+  category          Category?       @relation(fields: [categoryId], references: [id])
+  images            ProductImage[]
+  variants          ProductVariant[]
+  reviews           Review[]
+  orderItems        OrderItem[]
+  wishlistedBy      WishlistItem[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([status, published])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  publicId  String
+  url       String
+  secureUrl String
+  width     Int?
+  height    Int?
+  format    String?
+  bytes     Int?
+  alt       String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String // e.g. "Color"
+  value     String // e.g. "Black"
+  sku       String?
+  price     Int?
+  stock     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+// ---------- REVIEWS ----------
+
+model Review {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customerId        String?
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  rating            Int
+  title             String?
+  content           String
+  verifiedPurchase  Boolean  @default(false)
+  approved          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([productId])
+}
+
+// ---------- WISHLIST ----------
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([customerId, productId])
+}
+
+// ---------- ORDERS ----------
+
+enum OrderStatus {
+  PENDING
+  CONTACTED
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id])
+  customerName    String
+  customerEmail   String?
+  customerPhone   String
+  status          OrderStatus @default(PENDING)
+  subtotal        Int
+  shipping        Int         @default(0)
+  discount        Int         @default(0)
+  total           Int
+  currency        String      @default("NGN")
+  deliveryMethod  String?
+  deliveryAddress String?
+  notes           String?
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id                  String  @id @default(cuid())
+  orderId             String
+  order               Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId           String?
+  product             Product? @relation(fields: [productId], references: [id])
+  productNameSnapshot String
+  skuSnapshot         String
+  quantity            Int
+  unitPrice           Int
+  total               Int
+}
+
+// ---------- SITE SETTINGS ----------
+
+model SiteSettings {
+  id                  Int     @id @default(1)
+  siteName            String  @default("ENKAYS MINI-MARKETPLACE")
+  whatsappNumber      String?
+  supportEmail        String?
+  currency            String  @default("NGN")
+  seoTitle            String?
+  seoDescription      String?
+  whatsappIncludePrice Boolean @default(true)
+  whatsappIncludeSku   Boolean @default(true)
+  whatsappIncludeUrl   Boolean @default(true)
+  updatedAt           DateTime @updatedAt
+}
