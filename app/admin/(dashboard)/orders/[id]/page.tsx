@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OrderStatusForm } from "@/components/admin/OrderStatusForm";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/permissions";
 
@@ -40,7 +41,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         </section>
         <aside className="space-y-6">
           <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-sm"><h2 className="font-bold">Customer</h2><div className="mt-4 space-y-2 text-sm"><p className="font-medium">{order.customerName}</p><p>{order.customerPhone}</p>{order.customerEmail && <p>{order.customerEmail}</p>}</div></section>
-          <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-sm"><h2 className="font-bold">Fulfilment</h2><div className="mt-4 space-y-3 text-sm"><p><span className="text-ink-500">Order status:</span> <strong>{order.status}</strong></p><p><span className="text-ink-500">Payment:</span> <strong>{order.paymentStatus}</strong></p>{order.paymentMethod && <p><span className="text-ink-500">Method:</span> {order.paymentMethod}</p>}{order.deliveryMethod && <p><span className="text-ink-500">Delivery:</span> {order.deliveryMethod}</p>}{order.deliveryAddress && <p><span className="text-ink-500">Address:</span> {order.deliveryAddress}</p>}</div></section>
+          <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-sm"><h2 className="font-bold">Fulfilment</h2><OrderStatusForm id={order.id} status={order.status} paymentStatus={order.paymentStatus} /><div className="mt-4 space-y-3 text-sm">{order.paymentMethod && <p><span className="text-ink-500">Method:</span> {order.paymentMethod}</p>}{order.deliveryMethod && <p><span className="text-ink-500">Delivery:</span> {order.deliveryMethod}</p>}{order.deliveryAddress && <p><span className="text-ink-500">Address:</span> {order.deliveryAddress}</p>}</div></section>
         </aside>
       </div>
     </main>
