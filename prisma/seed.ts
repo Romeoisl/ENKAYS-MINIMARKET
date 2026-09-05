@@ -5,8 +5,13 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash("ChangeMe123!", 10);
-  const admin = await prisma.user.upsert({ where: { email: "admin@enkays.demo" }, update: {}, create: { name: "ENKAYS Super Admin", email: "admin@enkays.demo", passwordHash, role: Role.SUPER_ADMIN, active: true } });
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!seedPassword || seedPassword.length < 12) {
+    throw new Error("SEED_ADMIN_PASSWORD must be set and contain at least 12 characters");
+  }
+
+  const passwordHash = await bcrypt.hash(seedPassword, 10);
+  const admin = await prisma.user.upsert({ where: { email: "admin@enkays.demo" }, update: { passwordHash }, create: { name: "ENKAYS Super Admin", email: "admin@enkays.demo", passwordHash, role: Role.SUPER_ADMIN, active: true } });
   await prisma.siteSettings.upsert({
     where: { id: 1 }, update: {}, create: {
       id: 1, siteName: "ENKAYS MINI-MARKETPLACE", whatsappNumber: "2348000000000", supportEmail: "support@enkays.demo",
@@ -74,7 +79,6 @@ async function main() {
   for (const item of cms) await prisma.cmsContent.upsert({ where: { key: item.key }, update: item, create: item });
   await prisma.auditLog.create({ data: { userId: admin.id, action: "SEED_INITIALIZED", resource: "SEED", metadata: { demo: true } } });
   console.log("Seed complete: development/demo catalogue, CMS, promotions, delivery, review and admin data created.");
-  console.log("Demo admin: admin@enkays.demo / ChangeMe123! — change immediately before any non-development use.");
 }
 
 main().catch((error) => { console.error(error); process.exit(1); }).finally(async () => prisma.$disconnect());
