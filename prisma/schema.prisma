@@ -171,42 +171,42 @@ model Brand {
   active      Boolean   @default(true)
   products    Product[]
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime @updatedAt
 
   @@index([active, name])
 }
 
 model Product {
-  id             String            @id @default(cuid())
-  name           String
-  slug           String            @unique
-  description    String
+  id              String            @id @default(cuid())
+  name            String
+  slug            String            @unique
+  description     String
   shortDescription String?
-  price          Int
-  compareAtPrice Int?
-  currency       String            @default("NGN")
-  sku            String            @unique
-  stock          Int               @default(0)
-  status         ProductStatus     @default(DRAFT)
-  featured       Boolean           @default(false)
-  published      Boolean           @default(false)
-  salesMethod    SalesMethod       @default(WHATSAPP)
-  priceVisibility PriceVisibility  @default(SHOW_PRICE)
-  brandId        String?
-  categoryId     String?
-  brand          Brand?            @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  category       Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  images         ProductImage[]
-  variants       ProductVariant[]
-  reviews        Review[]
-  orderItems     OrderItem[]
-  wishlistedBy   WishlistItem[]
-  cartItems      CartItem[]
-  recentlyViewed RecentlyViewed[]
-  promotionItems PromotionProduct[]
-  flashSaleItems FlashSaleItem[]
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  price           Int
+  compareAtPrice  Int?
+  currency        String            @default("NGN")
+  sku             String            @unique
+  stock           Int               @default(0)
+  status          ProductStatus     @default(DRAFT)
+  featured        Boolean           @default(false)
+  published       Boolean           @default(false)
+  salesMethod     SalesMethod       @default(WHATSAPP)
+  priceVisibility PriceVisibility   @default(SHOW_PRICE)
+  brandId         String?
+  categoryId      String?
+  brand           Brand?            @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  images          ProductImage[]
+  variants        ProductVariant[]
+  reviews         Review[]
+  orderItems      OrderItem[]
+  wishlistedBy    WishlistItem[]
+  cartItems       CartItem[]
+  recentlyViewed  RecentlyViewed[]
+  promotionItems  PromotionProduct[]
+  flashSaleItems  FlashSaleItem[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([categoryId])
   @@index([brandId])
@@ -235,18 +235,19 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   name      String
   value     String
-  sku       String?  @unique
+  sku       String?    @unique
   price     Int?
-  stock     Int      @default(0)
-  active    Boolean  @default(true)
+  stock     Int        @default(0)
+  active    Boolean    @default(true)
   options   Json?
   imageId   String?
-  createdAt DateTime @default(now())
+  cartItems CartItem[]
+  createdAt DateTime   @default(now())
 
   @@index([productId, active])
 }
@@ -326,20 +327,20 @@ model OrderItem {
 }
 
 model Review {
-  id              String        @id @default(cuid())
-  productId       String
-  customerId      String?
-  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  rating          Int
-  title           String?
-  content         String
-  images          Json?
-  verifiedPurchase Boolean       @default(false)
-  helpfulVotes    Int           @default(0)
-  status          ReviewStatus  @default(PENDING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String       @id @default(cuid())
+  productId         String
+  customerId        String?
+  product           Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer          Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  rating            Int
+  title             String?
+  content           String
+  images            Json?
+  verifiedPurchase  Boolean      @default(false)
+  helpfulVotes     Int           @default(0)
+  status            ReviewStatus @default(PENDING)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@index([productId, status, createdAt])
   @@index([customerId])
@@ -423,16 +424,16 @@ model FlashSale {
 }
 
 model FlashSaleItem {
-  id             String    @id @default(cuid())
-  flashSaleId    String
-  productId      String
-  flashSale      FlashSale @relation(fields: [flashSaleId], references: [id], onDelete: Cascade)
-  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  salePrice      Int
-  originalPrice  Int
+  id              String    @id @default(cuid())
+  flashSaleId     String
+  productId       String
+  flashSale       FlashSale @relation(fields: [flashSaleId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  salePrice       Int
+  originalPrice   Int
   stockAllocation Int
-  quantityLimit  Int?
-  createdAt      DateTime  @default(now())
+  quantityLimit   Int?
+  createdAt       DateTime  @default(now())
 
   @@unique([flashSaleId, productId])
   @@index([productId])
@@ -449,7 +450,7 @@ model Coupon {
   usageCount       Int          @default(0)
   perCustomerLimit Int?
   active           Boolean      @default(true)
-  usages           CouponUsage[]
+  usages            CouponUsage[]
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -503,24 +504,24 @@ model CmsContent {
 }
 
 model SiteSettings {
-  id                       Int      @id @default(1)
-  siteName                 String   @default("ENKAYS MINI-MARKETPLACE")
-  logo                     String?
-  favicon                  String?
-  currency                 String   @default("NGN")
-  whatsappNumber           String?
-  phoneNumber              String?
-  supportEmail             String?
-  defaultWhatsAppMessage  String?
-  includePriceInWhatsApp  Boolean  @default(true)
-  includeSkuInWhatsApp    Boolean  @default(true)
+  id                         Int      @id @default(1)
+  siteName                   String   @default("ENKAYS MINI-MARKETPLACE")
+  logo                       String?
+  favicon                    String?
+  currency                   String   @default("NGN")
+  whatsappNumber             String?
+  phoneNumber                String?
+  supportEmail              String?
+  defaultWhatsAppMessage    String?
+  includePriceInWhatsApp    Boolean  @default(true)
+  includeSkuInWhatsApp      Boolean  @default(true)
   includeProductUrlInWhatsApp Boolean @default(true)
-  seoTitle                 String?
-  seoDescription           String?
-  socialLinks              Json?
-  branding                 Json?
-  orderPrefix              String   @default("ENK")
-  updatedAt                DateTime @updatedAt
+  seoTitle                   String?
+  seoDescription             String?
+  socialLinks                Json?
+  branding                   Json?
+  orderPrefix               String   @default("ENK")
+  updatedAt                  DateTime @updatedAt
 }
 
 model AnalyticsEvent {
