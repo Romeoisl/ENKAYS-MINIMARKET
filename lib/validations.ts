@@ -16,6 +16,8 @@ export const productSchema = z.object({
   published: z.boolean().default(false),
   categoryId: z.string().cuid().optional().nullable(),
   brandId: z.string().cuid().optional().nullable(),
+  salesMethod: z.enum(["WHATSAPP", "CONTACT", "PHONE", "CHECKOUT", "DISABLED"]).default("WHATSAPP"),
+  priceVisibility: z.enum(["SHOW_PRICE", "CONTACT_FOR_PRICE"]).default("SHOW_PRICE"),
 });
 
 export const productQuerySchema = z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(24), q: z.string().trim().max(180).optional(), categoryId: z.string().cuid().optional(), brandId: z.string().cuid().optional(), featured: z.coerce.boolean().optional() });
