@@ -5,51 +5,26 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 type Image = { id: string; secureUrl: string; alt?: string | null };
-type Product = { id?: string; name: string; slug: string; description: string; shortDescription?: string | null; price: number; compareAtPrice?: number | null; currency: string; sku: string; stock: number; featured: boolean; published: boolean; categoryId?: string | null; brandId?: string | null; salesMethod?: "WHATSAPP" | "CONTACT" | "PHONE" | "CHECKOUT" | "DISABLED"; priceVisibility?: "SHOW_PRICE" | "CONTACT_FOR_PRICE"; images?: Image[] };
+type Variant = { id: string; name: string; value: string; sku?: string | null; price?: number | null; stock: number; active: boolean };
+type Product = { id?: string; name: string; slug: string; description: string; shortDescription?: string | null; price: number; compareAtPrice?: number | null; currency: string; sku: string; stock: number; featured: boolean; published: boolean; categoryId?: string | null; brandId?: string | null; salesMethod?: "WHATSAPP" | "CONTACT" | "PHONE" | "CHECKOUT" | "DISABLED"; priceVisibility?: "SHOW_PRICE" | "CONTACT_FOR_PRICE"; images?: Image[]; variants?: Variant[] };
 type Option = { id: string; name: string };
 
-function initialProduct(product?: Product): Product {
-  return product ?? { name: "", slug: "", description: "", shortDescription: "", price: 0, compareAtPrice: null, currency: "NGN", sku: "", stock: 0, featured: false, published: false, categoryId: null, brandId: null, salesMethod: "WHATSAPP", priceVisibility: "SHOW_PRICE", images: [] };
-}
+function initialProduct(product?: Product): Product { return product ?? { name: "", slug: "", description: "", shortDescription: "", price: 0, compareAtPrice: null, currency: "NGN", sku: "", stock: 0, featured: false, published: false, categoryId: null, brandId: null, salesMethod: "WHATSAPP", priceVisibility: "SHOW_PRICE", images: [], variants: [] }; }
 
 export function ProductForm({ product, categories = [], brands = [] }: { product?: Product; categories?: Option[]; brands?: Option[] }) {
-  const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState(initialProduct(product));
-  const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [deletingImage, setDeletingImage] = useState<string | null>(null);
+  const router = useRouter(); const fileRef = useRef<HTMLInputElement>(null); const [form, setForm] = useState(initialProduct(product)); const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false); const [deletingImage, setDeletingImage] = useState<string | null>(null); const [variantBusy, setVariantBusy] = useState(false);
+  const [newVariant, setNewVariant] = useState({ name: "", value: "", sku: "", price: "", stock: "0", active: true });
   const set = (key: keyof Product, value: unknown) => setForm((v) => ({ ...v, [key]: value }));
 
-  async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true);
-    try {
-      const payload = { name: form.name, slug: form.slug, description: form.description, shortDescription: form.shortDescription || null, price: Number(form.price), compareAtPrice: form.compareAtPrice == null ? null : Number(form.compareAtPrice), currency: form.currency, sku: form.sku, stock: Number(form.stock), featured: form.featured, published: form.published, categoryId: form.categoryId || null, brandId: form.brandId || null, salesMethod: form.salesMethod ?? "WHATSAPP", priceVisibility: form.priceVisibility ?? "SHOW_PRICE" };
-      const response = await fetch(form.id ? `/api/v1/admin/products/${form.id}` : "/api/v1/admin/products", { method: form.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const json = await response.json(); if (!response.ok) throw new Error(json?.error?.message ?? "Could not save product");
-      toast.success("Product saved"); router.push(`/admin/products/${json.data.id}`); router.refresh();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save product"); } finally { setBusy(false); }
-  }
+  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); try { const payload = { name: form.name, slug: form.slug, description: form.description, shortDescription: form.shortDescription || null, price: Number(form.price), compareAtPrice: form.compareAtPrice == null ? null : Number(form.compareAtPrice), currency: form.currency, sku: form.sku, stock: Number(form.stock), featured: form.featured, published: form.published, categoryId: form.categoryId || null, brandId: form.brandId || null, salesMethod: form.salesMethod ?? "WHATSAPP", priceVisibility: form.priceVisibility ?? "SHOW_PRICE" }; const response = await fetch(form.id ? `/api/v1/admin/products/${form.id}` : "/api/v1/admin/products", { method: form.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); const json = await response.json(); if (!response.ok) throw new Error(json?.error?.message ?? "Could not save product"); toast.success("Product saved"); router.push(`/admin/products/${json.data.id}`); router.refresh(); } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save product"); } finally { setBusy(false); } }
 
-  async function upload() {
-    if (!form.id) { toast.error("Save the product before uploading images"); return; }
-    const file = fileRef.current?.files?.[0]; if (!file) return; setUploading(true);
-    try {
-      const body = new FormData(); body.append("file", file); body.append("productId", form.id);
-      const response = await fetch("/api/v1/admin/media/upload", { method: "POST", body }); const json = await response.json();
-      if (!response.ok) throw new Error(json?.error?.message ?? "Upload failed");
-      setForm((v) => ({ ...v, images: [...(v.images ?? []), json.data] })); toast.success("Image uploaded"); if (fileRef.current) fileRef.current.value = "";
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed"); } finally { setUploading(false); }
-  }
+  async function upload() { if (!form.id) { toast.error("Save the product before uploading images"); return; } const file = fileRef.current?.files?.[0]; if (!file) return; setUploading(true); try { const body = new FormData(); body.append("file", file); body.append("productId", form.id); const response = await fetch("/api/v1/admin/media/upload", { method: "POST", body }); const json = await response.json(); if (!response.ok) throw new Error(json?.error?.message ?? "Upload failed"); setForm((v) => ({ ...v, images: [...(v.images ?? []), json.data] })); toast.success("Image uploaded"); if (fileRef.current) fileRef.current.value = ""; } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed"); } finally { setUploading(false); } }
 
-  async function removeImage(imageId: string) {
-    setDeletingImage(imageId);
-    try {
-      const response = await fetch(`/api/v1/admin/media/${imageId}`, { method: "DELETE" }); const json = await response.json();
-      if (!response.ok) throw new Error(json?.error?.message ?? "Could not remove image");
-      setForm((v) => ({ ...v, images: (v.images ?? []).filter((image) => image.id !== imageId) })); toast.success("Image removed");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not remove image"); } finally { setDeletingImage(null); }
-  }
+  async function removeImage(imageId: string) { setDeletingImage(imageId); try { const response = await fetch(`/api/v1/admin/media/${imageId}`, { method: "DELETE" }); const json = await response.json(); if (!response.ok) throw new Error(json?.error?.message ?? "Could not remove image"); setForm((v) => ({ ...v, images: (v.images ?? []).filter((image) => image.id !== imageId) })); toast.success("Image removed"); } catch (e) { toast.error(e instanceof Error ? e.message : "Could not remove image"); } finally { setDeletingImage(null); } }
+
+  async function addVariant(event: FormEvent) { event.preventDefault(); if (!form.id) { toast.error("Save the product before adding variants"); return; } setVariantBusy(true); try { const response = await fetch(`/api/v1/admin/products/${form.id}/variants`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newVariant.name, value: newVariant.value, sku: newVariant.sku || null, price: newVariant.price === "" ? null : Math.round(Number(newVariant.price) * 100), stock: Number(newVariant.stock), active: newVariant.active }) }); const json = await response.json(); if (!response.ok) throw new Error(json?.error?.message ?? "Could not add variant"); setForm((v) => ({ ...v, variants: [...(v.variants ?? []), json.data] })); setNewVariant({ name: "", value: "", sku: "", price: "", stock: "0", active: true }); toast.success("Variant added"); } catch (e) { toast.error(e instanceof Error ? e.message : "Could not add variant"); } finally { setVariantBusy(false); } }
+
+  async function removeVariant(variantId: string) { setVariantBusy(true); try { const response = await fetch(`/api/v1/admin/products/${form.id}/variants/${variantId}`, { method: "DELETE" }); const json = await response.json(); if (!response.ok) throw new Error(json?.error?.message ?? "Could not remove variant"); setForm((v) => ({ ...v, variants: (v.variants ?? []).filter((variant) => variant.id !== variantId) })); toast.success("Variant removed"); } catch (e) { toast.error(e instanceof Error ? e.message : "Could not remove variant"); } finally { setVariantBusy(false); } }
 
   return <form onSubmit={submit} className="space-y-6">
     <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-sm"><div className="grid gap-5 md:grid-cols-2">
@@ -66,7 +41,13 @@ export function ProductForm({ product, categories = [], brands = [] }: { product
       <label className="space-y-2 md:col-span-2"><span className="text-sm font-semibold">Short description</span><input value={form.shortDescription ?? ""} onChange={(e) => set("shortDescription", e.target.value)} className="w-full rounded-xl border border-ink-200 px-3 py-2.5" /></label>
       <label className="space-y-2 md:col-span-2"><span className="text-sm font-semibold">Description</span><textarea required rows={7} value={form.description} onChange={(e) => set("description", e.target.value)} className="w-full rounded-xl border border-ink-200 px-3 py-2.5" /></label>
     </div><div className="mt-5 flex flex-wrap gap-6"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.featured} onChange={(e) => set("featured", e.target.checked)} /> Featured</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.published} onChange={(e) => set("published", e.target.checked)} /> Published</label></div></section>
+
+    <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-sm"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><h2 className="font-bold">Variants</h2><p className="mt-1 text-sm text-ink-500">Use variants for sizes, colours or other sellable options.</p></div></div>
+      {(form.variants ?? []).length > 0 && <div className="mt-5 overflow-x-auto"><table className="min-w-full text-sm"><thead className="border-b border-ink-100"><tr><th className="px-3 py-2 text-left">Option</th><th className="px-3 py-2 text-left">SKU</th><th className="px-3 py-2 text-left">Price</th><th className="px-3 py-2 text-left">Stock</th><th className="px-3 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-ink-100">{form.variants?.map((variant) => <tr key={variant.id}><td className="px-3 py-3 font-medium">{variant.name}: {variant.value}</td><td className="px-3 py-3">{variant.sku ?? "—"}</td><td className="px-3 py-3">{variant.price == null ? "Base price" : `₦${(variant.price / 100).toLocaleString("en-NG")}`}</td><td className="px-3 py-3">{variant.stock}</td><td className="px-3 py-3 text-right"><button type="button" disabled={variantBusy} onClick={() => void removeVariant(variant.id)} className="font-semibold text-red-700 hover:underline disabled:opacity-50">Remove</button></td></tr>)}</tbody></table></div>}
+      <form onSubmit={addVariant} className="mt-5 grid gap-3 rounded-xl bg-ink-50 p-4 md:grid-cols-5"><input required placeholder="Name (e.g. Colour)" value={newVariant.name} onChange={(e) => setNewVariant((v) => ({ ...v, name: e.target.value }))} className="rounded-lg border border-ink-200 bg-white px-3 py-2" /><input required placeholder="Value (e.g. Black)" value={newVariant.value} onChange={(e) => setNewVariant((v) => ({ ...v, value: e.target.value }))} className="rounded-lg border border-ink-200 bg-white px-3 py-2" /><input placeholder="SKU" value={newVariant.sku} onChange={(e) => setNewVariant((v) => ({ ...v, sku: e.target.value }))} className="rounded-lg border border-ink-200 bg-white px-3 py-2" /><input min="0" type="number" placeholder="Price" value={newVariant.price} onChange={(e) => setNewVariant((v) => ({ ...v, price: e.target.value }))} className="rounded-lg border border-ink-200 bg-white px-3 py-2" /><div className="flex gap-2"><input min="0" required type="number" value={newVariant.stock} onChange={(e) => setNewVariant((v) => ({ ...v, stock: e.target.value }))} className="min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-3 py-2" /><button disabled={variantBusy} className="rounded-lg bg-enkays-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Add</button></div></form>
+    </section>
+
     <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-sm"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><h2 className="font-bold">Product media</h2><p className="mt-1 text-sm text-ink-500">JPEG, PNG, WebP or AVIF · max 8 MB.</p></div><input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="max-w-[260px] text-sm" onChange={() => void upload()} disabled={!form.id || uploading} /></div>{(form.images ?? []).length > 0 && <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">{form.images?.map((image) => <div key={image.id} className="overflow-hidden rounded-xl border border-ink-100 bg-white"><img src={image.secureUrl} alt={image.alt ?? form.name} className="aspect-square w-full object-cover" /><button type="button" onClick={() => void removeImage(image.id)} disabled={deletingImage === image.id} className="w-full border-t border-ink-100 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">{deletingImage === image.id ? "Removing…" : "Remove image"}</button></div>)}</div>}</section>
-    <div className="flex justify-end gap-3"><button type="button" onClick={() => router.push("/admin/products")} className="rounded-xl border border-ink-200 px-5 py-2.5 text-sm font-semibold">Cancel</button><button disabled={busy || uploading || !!deletingImage} className="rounded-xl bg-enkays-700 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : "Save product"}</button></div>
+    <div className="flex justify-end gap-3"><button type="button" onClick={() => router.push("/admin/products")} className="rounded-xl border border-ink-200 px-5 py-2.5 text-sm font-semibold">Cancel</button><button disabled={busy || uploading || !!deletingImage || variantBusy} className="rounded-xl bg-enkays-700 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : "Save product"}</button></div>
   </form>;
 }
