@@ -15,7 +15,7 @@ export async function GET(
       category: { select: { id: true, name: true, slug: true } },
       brand: { select: { id: true, name: true, slug: true } },
       reviews: {
-        where: { approved: true },
+        where: { status: "APPROVED" },
         orderBy: { createdAt: "desc" },
         take: 20,
       },
