@@ -19,6 +19,15 @@ export const productSchema = z.object({
   published: z.boolean().default(false),
 });
 
+export const productQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(24),
+  q: z.string().trim().max(180).optional(),
+  categoryId: z.string().cuid().optional(),
+  brandId: z.string().cuid().optional(),
+  featured: z.coerce.boolean().optional(),
+});
+
 export const categorySchema = z.object({
   name: z.string().trim().min(2).max(120),
   slug: z.string().trim().min(2).max(140).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
