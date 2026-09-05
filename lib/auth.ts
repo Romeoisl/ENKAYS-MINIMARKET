@@ -4,10 +4,10 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { checkRateLimit, clearRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import authConfig from "@/lib/auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt", maxAge: 8 * 60 * 60 },
-  pages: { signIn: "/admin/login" },
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
