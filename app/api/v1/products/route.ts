@@ -1,53 +1,55 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { ProductStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { PRODUCTS_PER_PAGE } from "@/lib/constants";
+import { apiError, apiSuccess, requestId } from "@/lib/api";
+import { productQuerySchema } from "@/lib/validations";
 
-// GET /api/v1/products?page=1&category=electronics&brand=novatech&q=headphones
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
-  const categorySlug = searchParams.get("category") ?? undefined;
-  const brandSlug = searchParams.get("brand") ?? undefined;
-  const q = searchParams.get("q") ?? undefined;
+  const id = requestId();
+  try {
+    const parsed = productQuerySchema.safeParse(Object.fromEntries(new URL(req.url).searchParams));
+    if (!parsed.success) return apiError(parsed.error, id);
 
-  const where = {
-    published: true,
-    status: { not: "ARCHIVED" as const },
-    ...(categorySlug ? { category: { slug: categorySlug } } : {}),
-    ...(brandSlug ? { brand: { slug: brandSlug } } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" as const } },
-            { sku: { contains: q, mode: "insensitive" as const } },
-            { shortDescription: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-  };
+    const { page, limit, q, categoryId, brandId, featured } = parsed.data;
+    const where = {
+      published: true,
+      status: { not: ProductStatus.ARCHIVED },
+      ...(categoryId ? { categoryId } : {}),
+      ...(brandId ? { brandId } : {}),
+      ...(featured !== undefined ? { featured } : {}),
+      ...(q ? { OR: [
+        { name: { contains: q, mode: "insensitive" as const } },
+        { sku: { contains: q, mode: "insensitive" as const } },
+        { description: { contains: q, mode: "insensitive" as const } },
+        { shortDescription: { contains: q, mode: "insensitive" as const } },
+      ] } : {}),
+    };
 
-  const [items, total] = await Promise.all([
-    db.product.findMany({
-      where,
-      include: {
-        images: { orderBy: { position: "asc" }, take: 1 },
-        category: { select: { id: true, name: true, slug: true } },
-        brand: { select: { id: true, name: true, slug: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PRODUCTS_PER_PAGE,
-      take: PRODUCTS_PER_PAGE,
-    }),
-    db.product.count({ where }),
-  ]);
+    const [items, total] = await db.$transaction([
+      db.product.findMany({
+        where,
+        include: {
+          images: { orderBy: { position: "asc" } },
+          category: { select: { id: true, name: true, slug: true } },
+          brand: { select: { id: true, name: true, slug: true } },
+          variants: { where: { active: true }, orderBy: { createdAt: "asc" } },
+          reviews: { where: { status: "APPROVED" }, select: { rating: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      db.product.count({ where }),
+    ]);
 
-  return NextResponse.json({
-    data: items,
-    meta: {
-      page,
-      perPage: PRODUCTS_PER_PAGE,
-      total,
-      totalPages: Math.ceil(total / PRODUCTS_PER_PAGE),
-    },
-  });
+    const data = items.map(({ reviews, ...product }) => ({
+      ...product,
+      rating: reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0,
+      reviewCount: reviews.length,
+    }));
+
+    return apiSuccess(data, { page, limit, total, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    return apiError(error, id);
+  }
 }
