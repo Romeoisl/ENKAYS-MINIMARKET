@@ -15,7 +15,7 @@ async function getProduct(slug: string) {
       images: { orderBy: { position: "asc" } },
       category: true,
       brand: true,
-      reviews: { where: { approved: true } },
+      reviews: { where: { status: "APPROVED" } },
     },
   });
 }
