@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/lib/permissions";
 import { db } from "@/lib/db";
-import { apiError, apiSuccess } from "@/lib/api";
+import { ApiError, apiError, apiSuccess } from "@/lib/api";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const body = updateSchema.parse(await request.json());
     const existing = await db.order.findUnique({ where: { id } });
-    if (!existing) return apiError("Order not found", 404);
+    if (!existing) return apiError(new ApiError("NOT_FOUND", "Order not found", 404));
     const order = await db.order.update({ where: { id }, data: body });
     await db.auditLog.create({ data: { userId: actor.id, action: "UPDATE", resource: "Order", resourceId: id, metadata: body } });
     return apiSuccess(order);
