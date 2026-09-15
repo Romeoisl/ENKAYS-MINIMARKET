@@ -1,24 +1,36 @@
 # ENKAYS MINI-MARKETPLACE
 
-Production-oriented marketplace foundation for a web storefront and future mobile clients. The web and mobile clients share the versioned API and PostgreSQL database; clients never connect directly to PostgreSQL.
+Production-oriented Next.js marketplace foundation for ENKAYS.
+
+## Ordering model
+
+ENKAYS uses a direct-contact ordering experience. Customers browse products and order by **WhatsApp** or **phone call**. There is no customer checkout, payment flow, shipping calculator, delivery-zone selector, or online delivery workflow.
 
 ## Stack
-Next.js App Router, React, TypeScript, Tailwind CSS, Prisma/PostgreSQL, Auth.js, Zod, React Hook Form, Sonner, Lucide and Cloudinary.
 
-## Commerce included
-- Product catalogue, categories, brands, variants and media
-- Guest cart with persistent HTTP-only session cookie
-- Validated checkout/order creation with delivery-zone pricing
-- Coupon validation and concurrency-aware stock decrements
-- Promotions and flash-sale public feeds
-- Reviews, wishlist and analytics APIs
-- Admin order management, CMS, promotions, coupons, analytics, customers and delivery zones
-- RBAC enforcement on server-side admin operations
-- Robots/sitemap generation
-- Audit logging foundation and secure media abstraction
+- Next.js App Router + React + TypeScript
+- Tailwind CSS + Lucide
+- PostgreSQL + Prisma
+- Auth.js / NextAuth
+- Zod + React Hook Form + Sonner
+- Cloudinary media abstraction
+- Versioned `/api/v1/*` APIs
 
-## Demo seed
-Seed data is development/demo data only. Set `SEED_ADMIN_PASSWORD` to a strong password of at least 12 characters before running `npm run db:seed`. The demo admin email is `admin@enkays.demo`; the password is never stored in this README or source code.
+## Development
 
-## Verification
-GitHub Actions runs Prisma generation/database checks, seed, typecheck, tests, lint and build. Production deployment still requires real production environment variables, database migration, Cloudinary credentials and operational security controls such as rate limiting/WAF/monitoring.
+```bash
+npm install
+cp .env.example .env
+npm run db:generate
+npm run db:seed
+npm run typecheck
+npm test
+npm run lint
+npm run build
+```
+
+`SEED_ADMIN_PASSWORD` must be supplied in the environment and contain at least 12 characters. Seed data is demo data only; it does not represent real transactions or inventory.
+
+## Architecture
+
+The website, future mobile client, database, media layer, and APIs are designed as a shared commerce platform. Mobile clients must use the versioned backend APIs and must never connect directly to PostgreSQL.
