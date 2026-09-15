@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ApiError, apiError, apiSuccess } from "@/lib/api";
 import { db } from "@/lib/db";
 import { recordAnalytics } from "@/lib/analytics";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 const COOKIE = "enkays_review_session";
@@ -11,6 +12,13 @@ const schema = z.object({ productId: z.string().cuid(), rating: z.number().int()
 
 export async function POST(request: NextRequest) {
   try {
+    const rate = checkRateLimit(`review:${getClientIp(request)}`, 5, 10 * 60 * 1000);
+    if (!rate.allowed) {
+      const response = apiSuccess({ submitted: false, message: "Too many review attempts. Please try again later." });
+      response.headers.set("Retry-After", String(rate.retryAfterSeconds ?? 600));
+      return response;
+    }
+
     const body = schema.parse(await request.json());
     const product = await db.product.findFirst({ where: { id: body.productId, published: true }, select: { id: true } });
     if (!product) throw new ApiError("NOT_FOUND", "Product not found", 404);

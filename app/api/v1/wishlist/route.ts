@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ApiError, apiError, apiSuccess } from "@/lib/api";
 import { db } from "@/lib/db";
 import { recordAnalytics } from "@/lib/analytics";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 const COOKIE = "enkays_wishlist";
@@ -24,6 +25,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rate = checkRateLimit(`wishlist:${getClientIp(request)}`, 60, 60 * 1000);
+    if (!rate.allowed) {
+      const response = apiSuccess({ updated: false });
+      response.headers.set("Retry-After", String(rate.retryAfterSeconds ?? 60));
+      return response;
+    }
     const guestSessionId = session(request);
     const { productId } = z.object({ productId: z.string().cuid() }).parse(await request.json());
     const product = await db.product.findFirst({ where: { id: productId, published: true }, select: { id: true } });
@@ -37,6 +44,12 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const rate = checkRateLimit(`wishlist:${getClientIp(request)}`, 60, 60 * 1000);
+    if (!rate.allowed) {
+      const response = apiSuccess({ removed: false });
+      response.headers.set("Retry-After", String(rate.retryAfterSeconds ?? 60));
+      return response;
+    }
     const guestSessionId = session(request);
     const productId = z.string().cuid().parse(new URL(request.url).searchParams.get("productId"));
     await db.wishlistItem.deleteMany({ where: { guestSessionId, productId } });

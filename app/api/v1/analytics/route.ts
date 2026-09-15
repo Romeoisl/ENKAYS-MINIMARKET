@@ -3,6 +3,7 @@ import { z } from "zod";
 import { apiError, apiSuccess } from "@/lib/api";
 import { recordAnalytics } from "@/lib/analytics";
 import { db } from "@/lib/db";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -15,13 +16,23 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const rate = checkRateLimit(`analytics:${getClientIp(request)}`, 120, 60 * 1000);
+    if (!rate.allowed) {
+      const response = apiSuccess({ recorded: false });
+      response.headers.set("Retry-After", String(rate.retryAfterSeconds ?? 60));
+      response.headers.set("X-RateLimit-Remaining", "0");
+      return response;
+    }
+
     const body = schema.parse(await request.json());
     if (body.productId) {
       const product = await db.product.findFirst({ where: { id: body.productId, published: true }, select: { id: true } });
       if (!product) return apiSuccess({ recorded: false });
     }
     await recordAnalytics(body.type, { productId: body.productId, sessionId: body.sessionId, metadata: body.metadata });
-    return apiSuccess({ recorded: true });
+    const response = apiSuccess({ recorded: true });
+    response.headers.set("X-RateLimit-Remaining", String(rate.remaining));
+    return response;
   } catch (error) {
     return apiError(error);
   }
