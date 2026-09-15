@@ -1,10 +1,14 @@
-# ENKAYS MINI-MARKETPLACE
+# Enkays Foods & More
 
-Production-oriented Next.js marketplace foundation for ENKAYS.
+A modern foodstuff storefront for quality pantry essentials, grains, staples, oils, spices and everyday favourites.
 
 ## Ordering model
 
-ENKAYS uses a direct-contact ordering experience. Customers browse products and order by **WhatsApp** or **phone call**. There is no customer checkout, payment flow, shipping calculator, delivery-zone selector, or online delivery workflow.
+Enkays uses a direct-contact ordering experience. Customers browse foodstuff and order by **WhatsApp** or **phone call**. There is no customer checkout, payment flow, cart workflow, shipping calculator, delivery-zone selector, or online delivery workflow.
+
+## Brand direction
+
+The website is intentionally food-first rather than mini-market-first. The storefront is designed around discoverability, social sharing, SEO, strong product presentation and fast WhatsApp/phone conversion, with a modern futuristic visual language that keeps food and products at the centre.
 
 ## Stack
 

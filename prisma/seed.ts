@@ -3,58 +3,72 @@ import { PrismaClient, Role, ProductStatus, SalesMethod, PromotionType, CouponTy
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const image = (slug: string) => `https://res.cloudinary.com/demo/image/upload/${slug}.jpg`;
 
 async function main() {
   const seedPassword = process.env.SEED_ADMIN_PASSWORD;
   if (!seedPassword || seedPassword.length < 12) throw new Error("SEED_ADMIN_PASSWORD must be set and contain at least 12 characters");
   const passwordHash = await bcrypt.hash(seedPassword, 10);
-  const admin = await prisma.user.upsert({ where: { email: "admin@enkays.demo" }, update: { passwordHash }, create: { name: "ENKAYS Super Admin", email: "admin@enkays.demo", passwordHash, role: Role.SUPER_ADMIN, active: true } });
-  await prisma.siteSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1, siteName: "ENKAYS MINI-MARKETPLACE", whatsappNumber: "2348000000000", phoneNumber: "+2348000000000", supportEmail: "support@enkays.demo", seoTitle: "ENKAYS MINI-MARKETPLACE — Shop Online", seoDescription: "Shop products at ENKAYS MINI-MARKETPLACE. Discover great products, browse categories, and order conveniently through WhatsApp or phone.", defaultWhatsAppMessage: "Hello, I’m interested in ordering from ENKAYS MINI-MARKETPLACE.", orderPrefix: "ENK" } });
+  const admin = await prisma.user.upsert({ where: { email: "admin@enkays.demo" }, update: { passwordHash }, create: { name: "Enkays Super Admin", email: "admin@enkays.demo", passwordHash, role: Role.SUPER_ADMIN, active: true } });
 
-  const electronics = await prisma.category.upsert({ where: { slug: "electronics" }, update: {}, create: { name: "Electronics", slug: "electronics", position: 1 } });
-  const fashion = await prisma.category.upsert({ where: { slug: "fashion" }, update: {}, create: { name: "Fashion", slug: "fashion", position: 2 } });
-  const home = await prisma.category.upsert({ where: { slug: "home-living" }, update: {}, create: { name: "Home & Living", slug: "home-living", position: 3 } });
-  const audio = await prisma.category.upsert({ where: { slug: "audio" }, update: {}, create: { name: "Audio", slug: "audio", parentId: electronics.id, position: 1 } });
-  const brandA = await prisma.brand.upsert({ where: { slug: "novatech" }, update: {}, create: { name: "NovaTech", slug: "novatech" } });
-  const brandB = await prisma.brand.upsert({ where: { slug: "urban-fit" }, update: {}, create: { name: "Urban Fit", slug: "urban-fit" } });
+  await prisma.siteSettings.upsert({ where: { id: 1 }, update: { siteName: "Enkays Foods & More", seoTitle: "Enkays Foods & More — Quality Foodstuff", seoDescription: "Quality foodstuff, pantry essentials and everyday staples. Order directly through WhatsApp or phone.", defaultWhatsAppMessage: "Hello, I’m interested in ordering from Enkays Foods & More." }, create: { id: 1, siteName: "Enkays Foods & More", whatsappNumber: "2348000000000", phoneNumber: "+2348000000000", supportEmail: "support@enkays.demo", seoTitle: "Enkays Foods & More — Quality Foodstuff", seoDescription: "Quality foodstuff, pantry essentials and everyday staples. Order directly through WhatsApp or phone.", defaultWhatsAppMessage: "Hello, I’m interested in ordering from Enkays Foods & More.", orderPrefix: "ENK" } });
 
-  const demoProducts = [
-    { name: "NovaTech Wireless Headphones", slug: "novatech-wireless-headphones", description: "Over-ear wireless headphones with active noise cancellation and 30-hour battery life. DEMO PRODUCT.", shortDescription: "Wireless ANC headphones, 30hr battery", price: 4500000, compareAtPrice: 5500000, sku: "WH-001", stock: 18, categoryId: audio.id, brandId: brandA.id, featured: true },
-    { name: "NovaTech Smartwatch Pro", slug: "novatech-smartwatch-pro", description: "Fitness tracking smartwatch with heart-rate monitor and 7-day battery life. DEMO PRODUCT.", shortDescription: "Fitness smartwatch, 7-day battery", price: 3200000, sku: "SW-002", stock: 0, categoryId: electronics.id, brandId: brandA.id },
-    { name: "Urban Fit Everyday Sneakers", slug: "urban-fit-everyday-sneakers", description: "Lightweight everyday sneakers built for comfort and durability. DEMO PRODUCT.", shortDescription: "Lightweight everyday sneakers", price: 1800000, compareAtPrice: 2200000, sku: "SNK-010", stock: 42, categoryId: fashion.id, brandId: brandB.id, featured: true },
-    { name: "Urban Fit Denim Jacket", slug: "urban-fit-denim-jacket", description: "Classic fit denim jacket, unisex sizing. DEMO PRODUCT.", shortDescription: "Classic fit denim jacket", price: 2500000, sku: "JKT-011", stock: 12, categoryId: fashion.id, brandId: brandB.id },
-    { name: "Ceramic Dinnerware Set (16-piece)", slug: "ceramic-dinnerware-set-16pc", description: "16-piece ceramic dinnerware set for 4, dishwasher and microwave safe. DEMO PRODUCT.", shortDescription: "16-piece ceramic dinnerware set", price: 3800000, compareAtPrice: 4300000, sku: "HM-020", stock: 7, categoryId: home.id, featured: true },
-    { name: "Aroma Diffuser & Humidifier", slug: "aroma-diffuser-humidifier", description: "300ml ultrasonic aroma diffuser with 7-color LED mood lighting. DEMO PRODUCT.", shortDescription: "300ml ultrasonic diffuser", price: 950000, sku: "HM-021", stock: 25, categoryId: home.id },
-  ];
-  const products = [] as Array<{ id: string; name: string; sku: string }>;
-  for (const p of demoProducts) {
-    const product = await prisma.product.upsert({ where: { slug: p.slug }, update: { price: p.price, compareAtPrice: p.compareAtPrice, stock: p.stock, categoryId: p.categoryId, brandId: p.brandId }, create: { ...p, status: p.stock === 0 ? ProductStatus.OUT_OF_STOCK : ProductStatus.PUBLISHED, published: true, salesMethod: SalesMethod.WHATSAPP }, select: { id: true, name: true, sku: true } });
-    products.push(product);
-    await prisma.productImage.upsert({ where: { id: `${product.id}-primary` }, update: {}, create: { id: `${product.id}-primary`, productId: product.id, publicId: `demo/${p.slug}`, url: `https://res.cloudinary.com/demo/image/upload/${p.slug}.jpg`, secureUrl: `https://res.cloudinary.com/demo/image/upload/${p.slug}.jpg`, alt: p.name, position: 0 } });
+  const categoryData = [
+    ["Rice & Grains", "rice-grains", "Rice, grains and everyday staples."],
+    ["Beans & Legumes", "beans-legumes", "Beans and protein-rich pantry staples."],
+    ["Garri & Cassava", "garri-cassava", "Garri and cassava-based favourites."],
+    ["Oils & Cooking", "oils-cooking", "Cooking oils and kitchen essentials."],
+    ["Flour & Baking", "flour-baking", "Flour, baking and pantry essentials."],
+    ["Spices & Seasonings", "spices-seasonings", "Seasonings and flavours for everyday cooking."],
+    ["Canned & Packaged", "canned-packaged", "Convenient packaged food essentials."],
+    ["Breakfast & Pantry", "breakfast-pantry", "Breakfast favourites and pantry staples."],
+  ] as const;
+  const categories = new Map<string, string>();
+  for (let i = 0; i < categoryData.length; i++) {
+    const [name, slug, description] = categoryData[i];
+    const c = await prisma.category.upsert({ where: { slug }, update: { name, description, active: true, position: i + 1 }, create: { name, slug, description, active: true, position: i + 1 } });
+    categories.set(slug, c.id);
   }
-  const headphones = products.find(p => p.sku === "WH-001")!;
-  await prisma.productVariant.deleteMany({ where: { productId: headphones.id } });
-  await prisma.productVariant.createMany({ data: [{ productId: headphones.id, name: "Color", value: "Black", sku: "WH-001-BLK", price: 4500000, stock: 10, options: { color: "Black" } }, { productId: headphones.id, name: "Color", value: "Silver", sku: "WH-001-SLV", price: 4700000, stock: 8, options: { color: "Silver" } }] });
-  await prisma.review.deleteMany({ where: { productId: headphones.id } });
-  await prisma.review.createMany({ data: [{ productId: headphones.id, rating: 5, title: "Great sound", content: "Demo review: clear sound and comfortable fit.", verifiedPurchase: true, status: ReviewStatus.APPROVED }, { productId: headphones.id, rating: 4, title: "Good battery", content: "Demo review: battery life is impressive.", verifiedPurchase: false, status: ReviewStatus.APPROVED }] });
 
-  const startsAt = new Date();
-  const endsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const promotion = await prisma.promotion.upsert({ where: { id: "demo-promotion" }, update: {}, create: { id: "demo-promotion", name: "Demo Weekend Savings", type: PromotionType.PERCENTAGE, value: 10, startsAt, endsAt, active: true } });
-  await prisma.promotionProduct.upsert({ where: { promotionId_productId: { promotionId: promotion.id, productId: headphones.id } }, update: {}, create: { promotionId: promotion.id, productId: headphones.id } });
-  const flash = await prisma.flashSale.upsert({ where: { id: "demo-flash-sale" }, update: {}, create: { id: "demo-flash-sale", name: "Demo Flash Sale", campaign: "Development campaign", startsAt, endsAt, active: true } });
-  await prisma.flashSaleItem.upsert({ where: { flashSaleId_productId: { flashSaleId: flash.id, productId: headphones.id } }, update: {}, create: { flashSaleId: flash.id, productId: headphones.id, salePrice: 3999900, originalPrice: 4500000, stockAllocation: 6, quantityLimit: 2 } });
+  const products = [
+    ["Premium Long Grain Rice", "premium-long-grain-rice", "Quality long grain rice for everyday family meals.", 6500000, "RICE-001", "rice-grains"],
+    ["Honey Beans", "honey-beans", "Clean, tasty beans for soups, stews and classic Nigerian meals.", 4800000, "BEAN-001", "beans-legumes"],
+    ["Premium Garri", "premium-garri", "Crisp, clean garri for drinking, snacks and everyday meals.", 3200000, "GAR-001", "garri-cassava"],
+    ["Pure Vegetable Oil", "pure-vegetable-oil", "Everyday cooking oil for your kitchen essentials.", 5200000, "OIL-001", "oils-cooking"],
+    ["All-Purpose Flour", "all-purpose-flour", "Versatile flour for baking, frying and home cooking.", 3500000, "FLR-001", "flour-baking"],
+    ["Kitchen Seasoning Mix", "kitchen-seasoning-mix", "Balanced seasoning for everyday Nigerian cooking.", 1800000, "SPC-001", "spices-seasonings"],
+    ["Tomato Paste Pack", "tomato-paste-pack", "Convenient tomato paste for sauces, rice and stews.", 2200000, "CAN-001", "canned-packaged"],
+    ["Breakfast Cereal", "breakfast-cereal", "A convenient breakfast favourite for busy mornings.", 4200000, "BRK-001", "breakfast-pantry"],
+  ] as const;
+  const created = [] as Array<{ id: string; name: string }>;
+  for (const [name, slug, description, price, sku, categorySlug] of products) {
+    const p = await prisma.product.upsert({ where: { slug }, update: { name, description, price, stock: 25, categoryId: categories.get(categorySlug), published: true, status: ProductStatus.PUBLISHED, salesMethod: SalesMethod.WHATSAPP }, create: { name, slug, description, price, sku, stock: 25, categoryId: categories.get(categorySlug), published: true, status: ProductStatus.PUBLISHED, salesMethod: SalesMethod.WHATSAPP } });
+    created.push({ id: p.id, name: p.name });
+    await prisma.productImage.upsert({ where: { id: `${p.id}-primary` }, update: { url: image(slug), secureUrl: image(slug), alt: name }, create: { id: `${p.id}-primary`, productId: p.id, publicId: `demo/${slug}`, url: image(slug), secureUrl: image(slug), alt: name, position: 0 } });
+  }
+
+  const first = created[0];
+  if (first) {
+    await prisma.review.deleteMany({ where: { productId: first.id } });
+    await prisma.review.create({ data: { productId: first.id, rating: 5, title: "Great quality", content: "Demo review: clean, reliable quality and great for everyday meals.", verifiedPurchase: true, status: ReviewStatus.APPROVED } });
+    const startsAt = new Date();
+    const endsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const promotion = await prisma.promotion.upsert({ where: { id: "demo-promotion" }, update: { name: "Food Essentials Savings", active: true }, create: { id: "demo-promotion", name: "Food Essentials Savings", type: PromotionType.PERCENTAGE, value: 10, startsAt, endsAt, active: true } });
+    await prisma.promotionProduct.upsert({ where: { promotionId_productId: { promotionId: promotion.id, productId: first.id } }, update: {}, create: { promotionId: promotion.id, productId: first.id } });
+    const flash = await prisma.flashSale.upsert({ where: { id: "demo-flash-sale" }, update: {}, create: { id: "demo-flash-sale", name: "Pantry Flash Sale", campaign: "Demo campaign", startsAt, endsAt, active: true } });
+    await prisma.flashSaleItem.upsert({ where: { flashSaleId_productId: { flashSaleId: flash.id, productId: first.id } }, update: {}, create: { flashSaleId: flash.id, productId: first.id, salePrice: 5990000, originalPrice: 6500000, stockAllocation: 10, quantityLimit: 3 } });
+  }
   await prisma.coupon.upsert({ where: { code: "ENKAYS10" }, update: {}, create: { code: "ENKAYS10", type: CouponType.PERCENTAGE, value: 10, minimumOrder: 2000000, usageLimit: 100, perCustomerLimit: 1, active: true } });
 
   const cms = [
-    { key: "demo-hero", type: CmsContentType.HERO, title: "Shop smarter with ENKAYS", content: { eyebrow: "DEMO CONTENT", headline: "Great finds, one marketplace", description: "Development content for ENKAYS MINI-MARKETPLACE." }, position: 1 },
-    { key: "demo-testimonial", type: CmsContentType.TESTIMONIAL, title: "Demo testimonial", content: { quote: "Demo content only.", author: "Development Customer" }, position: 1 },
-    { key: "demo-faq", type: CmsContentType.FAQ, title: "Demo FAQ", content: { question: "How do I order?", answer: "Browse a product and order through WhatsApp or phone." }, position: 1 },
-    { key: "demo-about", type: CmsContentType.ABOUT, title: "About ENKAYS", content: { body: "Development content for the ENKAYS MINI-MARKETPLACE brand." }, position: 1 },
+    { key: "demo-hero", type: CmsContentType.HERO, title: "Quality foodstuff, made easy", content: { eyebrow: "ENKAYS FOODS & MORE", headline: "Your everyday food essentials, sorted.", description: "Quality pantry staples and foodstuff with direct WhatsApp and phone ordering." }, position: 1 },
+    { key: "demo-testimonial", type: CmsContentType.TESTIMONIAL, title: "Demo testimonial", content: { quote: "Great quality and easy to order.", author: "Development Customer" }, position: 1 },
+    { key: "demo-faq", type: CmsContentType.FAQ, title: "How do I order?", content: { question: "How do I order?", answer: "Browse a product and order through WhatsApp or phone." }, position: 1 },
+    { key: "demo-about", type: CmsContentType.ABOUT, title: "About Enkays Foods & More", content: { body: "A modern foodstuff brand focused on quality everyday essentials and simple direct ordering." }, position: 1 },
   ];
   for (const item of cms) await prisma.cmsContent.upsert({ where: { key: item.key }, update: item, create: item });
-  await prisma.auditLog.create({ data: { userId: admin.id, action: "SEED_INITIALIZED", resource: "SEED", metadata: { demo: true } } });
-  console.log("Seed complete: development/demo catalogue, CMS, promotions, reviews and admin data created.");
+  await prisma.auditLog.create({ data: { userId: admin.id, action: "SEED_INITIALIZED", resource: "SEED", metadata: { demo: true, brand: "Enkays Foods & More" } } });
+  console.log("Enkays Foods & More demo seed complete.");
 }
 
-main().catch(error => { console.error(error); process.exit(1); }).finally(async () => prisma.$disconnect());
+main().catch((error) => { console.error(error); process.exit(1); }).finally(async () => prisma.$disconnect());
