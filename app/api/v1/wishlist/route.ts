@@ -1,9 +1,46 @@
-import { NextRequest } from "next/server";
+import { randomUUID } from "node:crypto";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { ApiError, apiError, apiSuccess } from "@/lib/api";
 import { db } from "@/lib/db";
-import { apiError, apiSuccess } from "@/lib/api";
-import { recordAnalytics } from "@/lib/storefront";
+import { recordAnalytics } from "@/lib/analytics";
+
 export const runtime = "nodejs";
-export async function GET(request: NextRequest) { try { const customerId = request.headers.get("x-customer-id"); if (!customerId) return apiSuccess([]); return apiSuccess(await db.wishlistItem.findMany({ where: { customerId }, include: { product: { include: { images: { orderBy: { position: "asc" } } } } }, orderBy: { createdAt: "desc" } })); } catch (e) { return apiError(e); } }
-export async function POST(request: NextRequest) { try { const customerId = z.string().cuid().parse(request.headers.get("x-customer-id")); const { productId } = z.object({ productId: z.string().cuid() }).parse(await request.json()); const item = await db.wishlistItem.upsert({ where: { customerId_productId: { customerId, productId } }, update: {}, create: { customerId, productId }, include: { product: true } }); await recordAnalytics("WISHLIST_ADD", { customerId, productId }); return apiSuccess(item); } catch (e) { return apiError(e); } }
-export async function DELETE(request: NextRequest) { try { const customerId = z.string().cuid().parse(request.headers.get("x-customer-id")); const productId = z.string().cuid().parse(new URL(request.url).searchParams.get("productId")); await db.wishlistItem.delete({ where: { customerId_productId: { customerId, productId } } }); await recordAnalytics("WISHLIST_REMOVE", { customerId, productId }); return apiSuccess({ removed: true }); } catch (e) { return apiError(e); } }
+const COOKIE = "enkays_wishlist";
+
+function session(request: NextRequest) { return request.cookies.get(COOKIE)?.value ?? randomUUID(); }
+function withSession(response: NextResponse, id: string) {
+  if (!response.cookies.get(COOKIE)) response.cookies.set(COOKIE, id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 180 });
+  return response;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const guestSessionId = session(request);
+    const items = await db.wishlistItem.findMany({ where: { guestSessionId }, include: { product: { include: { images: { orderBy: { position: "asc" } } } } }, orderBy: { createdAt: "desc" } });
+    return withSession(apiSuccess(items), guestSessionId);
+  } catch (error) { return apiError(error); }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const guestSessionId = session(request);
+    const { productId } = z.object({ productId: z.string().cuid() }).parse(await request.json());
+    const product = await db.product.findFirst({ where: { id: productId, published: true }, select: { id: true } });
+    if (!product) throw new ApiError("NOT_FOUND", "Product not found", 404);
+    const existing = await db.wishlistItem.findFirst({ where: { guestSessionId, productId } });
+    const item = existing ?? await db.wishlistItem.create({ data: { guestSessionId, productId }, include: { product: true } });
+    await recordAnalytics("WISHLIST_ADD", { productId, sessionId: guestSessionId });
+    return withSession(apiSuccess(item), guestSessionId);
+  } catch (error) { return apiError(error); }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const guestSessionId = session(request);
+    const productId = z.string().cuid().parse(new URL(request.url).searchParams.get("productId"));
+    await db.wishlistItem.deleteMany({ where: { guestSessionId, productId } });
+    await recordAnalytics("WISHLIST_REMOVE", { productId, sessionId: guestSessionId });
+    return withSession(apiSuccess({ removed: true }), guestSessionId);
+  } catch (error) { return apiError(error); }
+}

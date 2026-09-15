@@ -1,14 +1,16 @@
 # Enkays Foods & More
 
-A modern foodstuff storefront for quality pantry essentials, grains, staples, oils, spices and everyday favourites.
-
-## Ordering model
-
-Enkays uses a direct-contact ordering experience. Customers browse foodstuff and order by **WhatsApp** or **phone call**. There is no customer checkout, payment flow, cart workflow, shipping calculator, delivery-zone selector, or online delivery workflow.
+Production-oriented Next.js storefront and admin platform for a modern Nigerian foodstuff brand.
 
 ## Brand direction
 
-The website is intentionally food-first rather than mini-market-first. The storefront is designed around discoverability, social sharing, SEO, strong product presentation and fast WhatsApp/phone conversion, with a modern futuristic visual language that keeps food and products at the centre.
+Enkays Foods & More is food-first: grains, beans, garri and cassava products, flour, oils, spices, pantry staples, packaged foods and related everyday essentials. The experience is intentionally premium, modern and lightly futuristic while keeping product discovery and ordering simple.
+
+## Ordering model
+
+Customers browse products and order directly through **WhatsApp or phone call**. There is no public cart, customer checkout, online payment flow, shipping calculator, delivery-zone selector, delivery-address workflow or online delivery process.
+
+Admin users can still maintain internal order records for enquiries and confirmed direct orders.
 
 ## Stack
 
@@ -33,8 +35,10 @@ npm run lint
 npm run build
 ```
 
-`SEED_ADMIN_PASSWORD` must be supplied in the environment and contain at least 12 characters. Seed data is demo data only; it does not represent real transactions or inventory.
+`SEED_ADMIN_PASSWORD` must be supplied in the environment and contain at least 12 characters. Seed data is demo data only and does not represent real transactions or inventory.
 
-## Architecture
+## Production direction
 
-The website, future mobile client, database, media layer, and APIs are designed as a shared commerce platform. Mobile clients must use the versioned backend APIs and must never connect directly to PostgreSQL.
+The platform is being completed in this order: architecture cleanup, feature completion, security hardening, automated verification, storefront/admin UI transformation, then final regression and deployment readiness.
+
+The website, future mobile client, database, media layer and APIs are designed as a shared commerce platform. Mobile clients must use the versioned backend APIs and must never connect directly to PostgreSQL.
