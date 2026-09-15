@@ -42,3 +42,7 @@ npm run build
 The platform is being completed in this order: architecture cleanup, feature completion, security hardening, automated verification, storefront/admin UI transformation, then final regression and deployment readiness.
 
 The website, future mobile client, database, media layer and APIs are designed as a shared commerce platform. Mobile clients must use the versioned backend APIs and must never connect directly to PostgreSQL.
+
+## Deployment
+
+Production deployments are triggered from the `foundation/session-1` branch through Vercel. PostgreSQL is provided by Supabase and product media is handled through Cloudinary.
