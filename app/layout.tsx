@@ -3,6 +3,8 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { BRAND_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: {
     default: `${SITE_NAME} — ${SITE_TAGLINE}`,
