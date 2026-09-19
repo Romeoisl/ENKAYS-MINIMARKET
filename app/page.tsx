@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 import { BRAND_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 import { CallOrderButton } from "@/components/public/CallOrderButton";
 import Link from "next/link";
@@ -12,9 +13,14 @@ function whatsappUrl(number: string, message: string) {
 }
 
 export default async function HomePage() {
-  let products: Awaited<ReturnType<typeof db.product.findMany>> = [];
-  let categories: Awaited<ReturnType<typeof db.category.findMany>> = [];
-  let settings: Awaited<ReturnType<typeof db.siteSettings.findUnique>> = null;
+  let products: Prisma.ProductGetPayload<{
+    include: {
+      images: { orderBy: { position: "asc" }; take: 1 };
+      category: true;
+    };
+  }>[] = [];
+  let categories: Prisma.CategoryGetPayload<{}>[] = [];
+  let settings: Prisma.SiteSettingsGetPayload<{}> | null = null;
 
   try {
     [products, categories, settings] = await Promise.all([
