@@ -5,18 +5,22 @@ import { BRAND_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
+const SITE_URL = "https://enkays-foods-and-more.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    template: `%s | ${SITE_NAME}`,
+    default: "Enkays Foods & More | Nigerian Foodstuff",
+    template: "%s | Enkays Foods & More",
   },
-  description: BRAND_DESCRIPTION,
-  keywords: ["foodstuff", "groceries", "food store", "Nigeria", "Enkays Foods", "rice", "beans", "grains", "pantry essentials"],
+  description: "Grains, beans, garri, flour, oils, spices and pantry staples. Order by WhatsApp or phone call.",
+  keywords: ["foodstuff", "groceries", "food store", "Nigeria", "Enkays Foods", "rice", "beans", "garri", "grains", "pantry essentials"],
   openGraph: {
-    siteName: SITE_NAME,
+    siteName: "Enkays Foods & More",
     type: "website",
-    title: SITE_NAME,
-    description: BRAND_DESCRIPTION,
+    title: "Enkays Foods & More | Nigerian Foodstuff",
+    description: "Grains, beans, garri, flour, oils, spices and pantry staples. Order by WhatsApp or phone call.",
+    url: SITE_URL,
   },
   twitter: { card: "summary_large_image" },
 };
