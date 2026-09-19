@@ -5,6 +5,7 @@ on:
     branches: ["main", "foundation/**"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -51,3 +52,24 @@ jobs:
       - run: npm test
       - run: npm run lint
       - run: npm run build
+
+  seed-production-admin:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.PRODUCTION_DIRECT_URL }}
+      SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/session-1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: ""
+      - run: npm install --no-audit --no-fund
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run db:seed:admin
