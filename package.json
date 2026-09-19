@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed:admin": "tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "next": "^15.0.0",
