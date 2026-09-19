@@ -45,7 +45,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx prisma validate
       - run: npx prisma generate
-      - run: npx prisma db push --skip-generate
+      - run: npx prisma migrate deploy
       - run: npm run db:seed
       - run: npm run typecheck
       - run: npm test
