@@ -7,13 +7,18 @@ type ProductCardData = {
   price: number;
   compareAtPrice: number | null;
   stock: number;
+  status: "PUBLISHED" | "OUT_OF_STOCK" | "COMING_SOON";
   category?: { name: string; slug: string } | null;
   brand?: { name: string; slug: string } | null;
   images: { url: string; alt: string | null }[];
 };
 
 export function ProductCard({ product }: { product: ProductCardData }) {
-  const stock = stockLabel(product.stock);
+  const stock = product.status === "OUT_OF_STOCK"
+    ? { label: "Out of stock", tone: "out-of-stock" as const }
+    : product.status === "COMING_SOON"
+      ? { label: "Coming soon", tone: "low-stock" as const }
+      : stockLabel(product.stock);
   const image = product.images[0];
   const discount =
     product.compareAtPrice && product.compareAtPrice > product.price
