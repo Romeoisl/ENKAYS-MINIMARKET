@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import Link from "next/link";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { ProductCard } from "@/components/public/ProductCard";
@@ -78,7 +79,7 @@ export default async function ProductsPage({
             <p className="text-sm text-ink-500">{total} products found</p>
           </div>
           {(category || brand) && (
-            <a href="/products" className="text-sm font-medium text-enkays-600 hover:underline">
+            <Link href="/products" className="text-sm font-medium text-enkays-600 hover:underline">
               Clear filters
             </a>
           )}
