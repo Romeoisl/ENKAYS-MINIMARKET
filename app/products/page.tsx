@@ -81,7 +81,7 @@ export default async function ProductsPage({
           {(category || brand) && (
             <Link href="/products" className="text-sm font-medium text-enkays-600 hover:underline">
               Clear filters
-            </a>
+            </Link>
           )}
         </div>
 
@@ -134,13 +134,13 @@ export default async function ProductsPage({
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => {
               const href = filterQuery({ page: String(n) });
               return (
-                <a
+                <Link
                   key={n}
                   href={`/products?${href}`}
                   className={`rounded-full px-3 py-1 ${n === page ? "bg-enkays-600 text-white" : "border border-ink-100 bg-white"}`}
                 >
                   {n}
-                </a>
+                </Link>
               );
             })}
           </div>
