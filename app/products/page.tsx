@@ -13,7 +13,8 @@ export default async function ProductsPage({
   searchParams: Promise<{ q?: string; page?: string; category?: string; brand?: string }>;
 }) {
   const { q, page: pageParam, category, brand } = await searchParams;
-  const page = Math.max(1, Number(pageParam ?? "1"));
+  const parsedPage = Number(pageParam ?? "1");
+  const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
 
   const where = {
     published: true,
@@ -32,30 +33,49 @@ export default async function ProductsPage({
       : {}),
   };
 
-  const [products, total, categories, brands] = await Promise.all([
-    db.product.findMany({
-      where,
-      include: {
-        images: { orderBy: { position: "asc" }, take: 1 },
-        category: true,
-        brand: true,
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PRODUCTS_PER_PAGE,
-      take: PRODUCTS_PER_PAGE,
-    }),
-    db.product.count({ where }),
-    db.category.findMany({
-      where: { active: true },
-      select: { name: true, slug: true },
-      orderBy: { position: "asc" },
-    }),
-    db.brand.findMany({
-      where: { active: true },
-      select: { name: true, slug: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  let products: Awaited<ReturnType<typeof db.product.findMany>> = [];
+  let total = 0;
+  let categories: { name: string; slug: string }[] = [];
+  let brands: { name: string; slug: string }[] = [];
+
+  try {
+    [products, total, categories, brands] = await Promise.all([
+      db.product.findMany({
+        where,
+        include: {
+          images: { orderBy: { position: "asc" }, take: 1 },
+          category: true,
+          brand: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * PRODUCTS_PER_PAGE,
+        take: PRODUCTS_PER_PAGE,
+      }),
+      db.product.count({ where }),
+      db.category.findMany({
+        where: { active: true },
+        select: { name: true, slug: true },
+        orderBy: { position: "asc" },
+      }),
+      db.brand.findMany({
+        where: { active: true },
+        select: { name: true, slug: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+  } catch (error) {
+    console.error("[products] catalog query failed", error);
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 text-center">
+          <h1 className="text-2xl font-semibold text-ink-900">Products are temporarily unavailable</h1>
+          <p className="mt-2 text-sm text-ink-500">Please refresh in a moment. If the problem continues, contact Enkays Foods & More.</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE));
   const filterQuery = (overrides: Record<string, string | undefined> = {}) => {
