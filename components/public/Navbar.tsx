@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Heart, ShoppingCart, Menu } from "lucide-react";
+import { Search, Heart, Menu } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 
 export function Navbar() {
@@ -41,9 +41,6 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-4 md:ml-0">
           <Link href="/wishlist" aria-label="Wishlist">
             <Heart size={22} />
-          </Link>
-          <Link href="/cart" aria-label="Cart">
-            <ShoppingCart size={22} />
           </Link>
         </div>
       </div>
