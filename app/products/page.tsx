@@ -18,7 +18,7 @@ export default async function ProductsPage({
 
   const where = {
     published: true,
-    status: "PUBLISHED" as const,
+    status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] as const },
     ...(category ? { category: { slug: category, active: true } } : {}),
     ...(brand ? { brand: { slug: brand, active: true } } : {}),
     ...(q
@@ -43,6 +43,7 @@ export default async function ProductsPage({
     images: { url: string; alt: string | null }[];
     category: { name: string; slug: string } | null;
     brand: { name: string; slug: string } | null;
+    status: "PUBLISHED" | "OUT_OF_STOCK" | "COMING_SOON";
   }> = [];
   let total = 0;
   let categories: { name: string; slug: string }[] = [];
@@ -149,7 +150,7 @@ export default async function ProductsPage({
 
         {products.length === 0 ? (
           <p className="mt-8 text-ink-500">
-            No published products matched your search. Try another term or browse the available categories.
+            No products matched your search. Try another term or browse the available categories.
           </p>
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
