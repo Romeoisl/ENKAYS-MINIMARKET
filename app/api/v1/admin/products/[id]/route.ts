@@ -27,8 +27,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = productSchema.parse(await request.json());
     const existing = await db.product.findUnique({ where: { id: productId } });
     if (!existing) throw new ApiError("NOT_FOUND", "Product not found", 404);
-    const product = await db.product.update({ where: { id: productId }, data: { ...body, status: body.published ? "PUBLISHED" : existing.status === "PUBLISHED" ? "DRAFT" : existing.status } });
-    await db.auditLog.create({ data: { userId: user.id, action: "UPDATE", resource: "Product", resourceId: product.id, metadata: { name: product.name } } });
+    const status = body.status;
+    const product = await db.product.update({ where: { id: productId }, data: { ...body, status, published: status === "PUBLISHED" } });
+    await db.auditLog.create({ data: { userId: user.id, action: "UPDATE", resource: "Product", resourceId: product.id, metadata: { name: product.name, status } } });
     return NextResponse.json({ data: product, requestId: id });
   } catch (error) {
     return apiError(error, id);
