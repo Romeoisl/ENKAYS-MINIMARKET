@@ -46,3 +46,5 @@ The website, future mobile client, database, media layer and APIs are designed a
 ## Deployment
 
 Production deployments are triggered from the `foundation/session-1` branch through Vercel. PostgreSQL is provided by Supabase and product media is handled through Cloudinary.
+
+Production Prisma migrations are deployed automatically during the Vercel build.
