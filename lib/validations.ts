@@ -12,6 +12,7 @@ export const productSchema = z.object({
   currency: z.string().length(3).default("NGN"),
   sku: z.string().trim().min(1).max(80),
   stock: z.number().int().nonnegative(),
+  status: z.enum(["DRAFT", "PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"]).default("DRAFT"),
   featured: z.boolean().default(false),
   published: z.boolean().default(false),
   categoryId: z.string().cuid().optional().nullable(),
