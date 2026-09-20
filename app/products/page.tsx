@@ -33,7 +33,17 @@ export default async function ProductsPage({
       : {}),
   };
 
-  let products: Awaited<ReturnType<typeof db.product.findMany>> = [];
+  let products: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    price: number;
+    compareAtPrice: number | null;
+    stock: number;
+    images: { url: string; alt: string | null }[];
+    category: { name: string; slug: string } | null;
+    brand: { name: string; slug: string } | null;
+  }> = [];
   let total = 0;
   let categories: { name: string; slug: string }[] = [];
   let brands: { name: string; slug: string }[] = [];
