@@ -11,7 +11,7 @@ import { SITE_NAME } from "@/lib/constants";
 
 async function getProduct(slug: string) {
   return db.product.findFirst({
-    where: { slug, published: true, status: "PUBLISHED" },
+    where: { slug, published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } },
     include: {
       images: { orderBy: { position: "asc" } },
       category: true,
@@ -38,7 +38,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound();
 
   const settings = await db.siteSettings.findUnique({ where: { id: 1 } });
-  const stock = stockLabel(product.stock);
+  const stock = product.status === "OUT_OF_STOCK"
+    ? { label: "Out of stock", tone: "out-of-stock" as const }
+    : product.status === "COMING_SOON"
+      ? { label: "Coming soon", tone: "low-stock" as const }
+      : stockLabel(product.stock);
   const reviewCount = product.reviews.length;
   const avgRating = reviewCount > 0
     ? (product.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1)
