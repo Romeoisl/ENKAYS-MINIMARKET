@@ -5,6 +5,7 @@ import { Footer } from "@/components/public/Footer";
 import { ProductCard } from "@/components/public/ProductCard";
 import { PRODUCTS_PER_PAGE } from "@/lib/constants";
 import type { Prisma } from "@prisma/client";
+import { ProductStatus } from "@prisma/client";
 
 export const metadata = { title: "All Products" };
 
@@ -19,7 +20,7 @@ export default async function ProductsPage({
 
   const where = {
     published: true,
-    status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] as const },
+    status: { in: [ProductStatus.PUBLISHED, ProductStatus.OUT_OF_STOCK, ProductStatus.COMING_SOON] },
     ...(category ? { category: { slug: category, active: true } } : {}),
     ...(brand ? { brand: { slug: brand, active: true } } : {}),
     ...(q
