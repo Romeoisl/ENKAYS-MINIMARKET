@@ -4,6 +4,7 @@ import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { ProductCard } from "@/components/public/ProductCard";
 import { PRODUCTS_PER_PAGE } from "@/lib/constants";
+import type { Prisma } from "@prisma/client";
 
 export const metadata = { title: "All Products" };
 
@@ -33,18 +34,13 @@ export default async function ProductsPage({
       : {}),
   };
 
-  let products: Array<{
-    id: string;
-    slug: string;
-    name: string;
-    price: number;
-    compareAtPrice: number | null;
-    stock: number;
-    images: { url: string; alt: string | null }[];
-    category: { name: string; slug: string } | null;
-    brand: { name: string; slug: string } | null;
-    status: "PUBLISHED" | "OUT_OF_STOCK" | "COMING_SOON";
-  }> = [];
+  let products: Prisma.ProductGetPayload<{
+    include: {
+      images: { orderBy: { position: "asc" }; take: 1 };
+      category: true;
+      brand: true;
+    };
+  }>[] = [];
   let total = 0;
   let categories: { name: string; slug: string }[] = [];
   let brands: { name: string; slug: string }[] = [];
