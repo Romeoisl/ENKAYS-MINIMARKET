@@ -46,7 +46,7 @@ export default async function ProductsPage({
   let brands: { name: string; slug: string }[] = [];
 
   try {
-    [products, total, categories, brands] = await Promise.all([
+    const [queriedProducts, queriedTotal, queriedCategories, queriedBrands] = await Promise.all([
       db.product.findMany({
         where,
         include: {
