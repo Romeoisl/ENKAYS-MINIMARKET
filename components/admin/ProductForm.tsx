@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 type Image = { id: string; secureUrl: string; alt?: string | null };
 type Variant = { id: string; name: string; value: string; sku?: string | null; price?: number | null; stock: number; active: boolean };
-type Product = { id?: string; name: string; slug: string; description: string; shortDescription?: string | null; price: number; compareAtPrice?: number | null; currency: string; sku: string; stock: number; status?: "DRAFT" | "PUBLISHED" | "OUT_OF_STOCK" | "COMING_SOON"; featured: boolean; published: boolean; categoryId?: string | null; brandId?: string | null; salesMethod?: "WHATSAPP" | "PHONE" | "DISABLED"; priceVisibility?: "SHOW_PRICE" | "CONTACT_FOR_PRICE"; images?: Image[]; variants?: Variant[] };
+type Product = { id?: string; name: string; slug: string; description: string; shortDescription?: string | null; price: number; compareAtPrice?: number | null; currency: string; sku: string; stock: number; status?: "DRAFT" | "PUBLISHED" | "OUT_OF_STOCK" | "ARCHIVED" | "COMING_SOON" | "UNAVAILABLE"; featured: boolean; published: boolean; categoryId?: string | null; brandId?: string | null; salesMethod?: "WHATSAPP" | "PHONE" | "DISABLED"; priceVisibility?: "SHOW_PRICE" | "CONTACT_FOR_PRICE"; images?: Image[]; variants?: Variant[] };
 type Option = { id: string; name: string };
 
 function initialProduct(product?: Product): Product { return product ?? { name: "", slug: "", description: "", shortDescription: "", price: 0, compareAtPrice: null, currency: "NGN", sku: "", stock: 0, status: "DRAFT", featured: false, published: false, categoryId: null, brandId: null, salesMethod: "WHATSAPP", priceVisibility: "SHOW_PRICE", images: [], variants: [] }; }
