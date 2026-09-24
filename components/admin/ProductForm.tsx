@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -13,8 +13,42 @@ function initialProduct(product?: Product): Product { return product ?? { name: 
 
 export function ProductForm({ product, categories = [], brands = [] }: { product?: Product; categories?: Option[]; brands?: Option[] }) {
   const router = useRouter(); const fileRef = useRef<HTMLInputElement>(null); const [form, setForm] = useState(initialProduct(product)); const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false); const [deletingImage, setDeletingImage] = useState<string | null>(null); const [variantBusy, setVariantBusy] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]); const [newVariant, setNewVariant] = useState({ name: "", value: "", sku: "", price: "", stock: "0", active: true });
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]); const [filteredBrands, setFilteredBrands] = useState<Option[]>([]); const [brandsLoading, setBrandsLoading] = useState(false); const [newVariant, setNewVariant] = useState({ name: "", value: "", sku: "", price: "", stock: "0", active: true });
   const set = (key: keyof Product, value: unknown) => setForm((v) => ({ ...v, [key]: value }));
+
+  useEffect(() => {
+    const categoryId = form.categoryId;
+    if (!categoryId) {
+      setFilteredBrands([]);
+      if (form.brandId) setForm((v) => ({ ...v, brandId: null }));
+      return;
+    }
+
+    const controller = new AbortController();
+    setBrandsLoading(true);
+    fetch(`/api/v1/admin/brands?categoryId=${encodeURIComponent(categoryId)}`, { signal: controller.signal })
+      .then(async (response) => {
+        const json = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(json?.error?.message ?? "Could not load brands");
+        return Array.isArray(json?.data) ? json.data : [];
+      })
+      .then((nextBrands: Option[]) => {
+        setFilteredBrands(nextBrands);
+        setForm((v) => (
+          v.brandId && !nextBrands.some((brand) => brand.id === v.brandId)
+            ? { ...v, brandId: null }
+            : v
+        ));
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setFilteredBrands([]);
+        toast.error(error instanceof Error ? error.message : "Could not load brands");
+      })
+      .finally(() => setBrandsLoading(false));
+
+    return () => controller.abort();
+  }, [form.categoryId]);
 
   async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); try { const payload = { name: form.name, slug: form.slug, description: form.description, shortDescription: form.shortDescription || null, price: Number(form.price), compareAtPrice: form.compareAtPrice == null ? null : Number(form.compareAtPrice), currency: form.currency, sku: form.sku, stock: Number(form.stock), status: form.status ?? "DRAFT", featured: form.featured, published: form.status === "PUBLISHED", categoryId: form.categoryId || null, brandId: form.brandId || null, salesMethod: form.salesMethod ?? "WHATSAPP", priceVisibility: form.priceVisibility ?? "SHOW_PRICE" }; const response = await fetch(form.id ? `/api/v1/admin/products/${form.id}` : "/api/v1/admin/products", { method: form.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); const json = await response.json().catch(() => null); if (!response.ok) throw new Error(json?.error?.message ?? "Could not save product"); if (pendingFiles.length) { setUploading(true); for (const file of pendingFiles) { const body = new FormData(); body.append("file", file); body.append("productId", json.data.id); const uploadResponse = await fetch("/api/v1/admin/media/upload", { method: "POST", body }); const uploadJson = await uploadResponse.json().catch(() => null); if (!uploadResponse.ok) throw new Error(uploadJson?.error?.message ?? `Upload failed for ${file.name}`); } setPendingFiles([]); setUploading(false); } toast.success("Product saved"); router.push(`/admin/products/${json.data.id}`); router.refresh(); } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save product"); } finally { setBusy(false); } }
   async function upload() { if (!form.id) { toast.error("Images will upload automatically when you save"); return; } const file = fileRef.current?.files?.[0]; if (!file) return; setUploading(true); try { const body = new FormData(); body.append("file", file); body.append("productId", form.id); const response = await fetch("/api/v1/admin/media/upload", { method: "POST", body }); const json = await response.json(); if (!response.ok) throw new Error(json?.error?.message ?? "Upload failed"); setForm((v) => ({ ...v, images: [...(v.images ?? []), json.data] })); toast.success("Image uploaded"); if (fileRef.current) fileRef.current.value = ""; } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed"); } finally { setUploading(false); } }
@@ -31,8 +65,8 @@ export function ProductForm({ product, categories = [], brands = [] }: { product
       <label className="space-y-2"><span className="text-sm font-semibold">Compare-at price (₦)</span><input min="0" type="number" value={form.compareAtPrice ? form.compareAtPrice / 100 : ""} onChange={(e) => set("compareAtPrice", e.target.value ? Math.round(Number(e.target.value) * 100) : null)} className="w-full rounded-xl border border-ink-200 px-3 py-2.5" /></label>
       <label className="space-y-2"><span className="text-sm font-semibold">Stock</span><input required min="0" type="number" value={form.stock} onChange={(e) => set("stock", Number(e.target.value))} className="w-full rounded-xl border border-ink-200 px-3 py-2.5" /></label>
       <label className="space-y-2"><span className="text-sm font-semibold">Availability</span><select value={form.status ?? "DRAFT"} onChange={(e) => set("status", e.target.value)} className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5"><option value="PUBLISHED">In stock</option><option value="OUT_OF_STOCK">Out of stock</option><option value="COMING_SOON">Coming soon</option><option value="DRAFT">Draft / hidden</option></select></label>
-      <label className="space-y-2"><span className="text-sm font-semibold">Category</span><select value={form.categoryId ?? ""} onChange={(e) => set("categoryId", e.target.value || null)} className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5"><option value="">No category</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label className="space-y-2"><span className="text-sm font-semibold">Brand</span><select value={form.brandId ?? ""} onChange={(e) => set("brandId", e.target.value || null)} className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5"><option value="">No brand</option>{brands.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label className="space-y-2"><span className="text-sm font-semibold">Category</span><select value={form.categoryId ?? ""} onChange={(e) => { const categoryId = e.target.value || null; setForm((v) => ({ ...v, categoryId, brandId: null })); }} className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5"><option value="">No category</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label className="space-y-2"><span className="text-sm font-semibold">Brand</span><select value={form.brandId ?? ""} disabled={!form.categoryId || brandsLoading} onChange={(e) => set("brandId", e.target.value || null)} className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5"><option value="">{!form.categoryId ? "Select a category first" : brandsLoading ? "Loading brands…" : filteredBrands.length ? "Select a brand" : "No brands assigned"}</option>{filteredBrands.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><span className="text-xs text-ink-500">{form.categoryId ? "Only brands assigned to this category are shown." : "Choose a category to see its assigned brands."}</span></label>
       <label className="space-y-2"><span className="text-sm font-semibold">Order method</span><select value={form.salesMethod ?? "WHATSAPP"} onChange={(e) => set("salesMethod", e.target.value)} className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5"><option value="WHATSAPP">WhatsApp</option><option value="PHONE">Phone</option><option value="DISABLED">Disabled</option></select><span className="text-xs text-ink-500">Customers complete the order by chat or call — no public checkout.</span></label>
       <label className="space-y-2"><span className="text-sm font-semibold">Price visibility</span><select value={form.priceVisibility ?? "SHOW_PRICE"} onChange={(e) => set("priceVisibility", e.target.value)} className="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5"><option value="SHOW_PRICE">Show price</option><option value="CONTACT_FOR_PRICE">Contact for price</option></select></label>
       <label className="space-y-2 md:col-span-2"><span className="text-sm font-semibold">Short description</span><input value={form.shortDescription ?? ""} onChange={(e) => set("shortDescription", e.target.value)} className="w-full rounded-xl border border-ink-200 px-3 py-2.5" /></label>
