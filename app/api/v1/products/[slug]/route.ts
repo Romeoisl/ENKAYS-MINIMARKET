@@ -8,7 +8,7 @@ export async function GET(
   const { slug } = await params;
 
   const product = await db.product.findUnique({
-    where: { slug },
+    where: { slug, published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } },
     include: {
       images: { orderBy: { position: "asc" } },
       variants: { where: { active: true } },
@@ -22,7 +22,7 @@ export async function GET(
     },
   });
 
-  if (!product || !product.published) {
+  if (!product) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
