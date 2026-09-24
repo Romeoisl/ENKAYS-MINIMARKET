@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
+import { BRAND_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 
 export const runtime = "edge";
 export const alt = "Enkays Foods & More — Quality foodstuff. Simple ordering. Better living.";
@@ -53,8 +53,7 @@ export default function OpenGraphImage() {
             Quality food essentials, made easy.
           </div>
           <div style={{ marginTop: 22, fontSize: 24, lineHeight: 1.4, color: "#d1fae5" }}>
-            Shop rice, beans, garri, cooking oils, flour, spices, seafood, meat, poultry and more.
-            Order directly through WhatsApp or phone.
+            {BRAND_DESCRIPTION}
           </div>
         </div>
 
