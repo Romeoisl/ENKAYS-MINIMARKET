@@ -47,7 +47,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const avgRating = reviewCount > 0
     ? (product.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1)
     : null;
-  const productUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/products/${product.slug}`;
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://enkays-foods-and-more.vercel.app";
+  const productUrl = `${siteUrl.replace(/\/$/, "")}/products/${product.slug}`;
 
   return (
     <div className="flex min-h-screen flex-col">
