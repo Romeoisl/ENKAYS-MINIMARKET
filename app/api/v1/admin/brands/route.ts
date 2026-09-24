@@ -12,6 +12,7 @@ const brandSchema = z.object({
   description: z.string().trim().max(500).optional().nullable(),
   logo: z.string().url().optional().nullable(),
   active: z.boolean().default(true),
+  categoryIds: z.array(z.string().cuid()).default([]),
 });
 
 export async function GET(request: NextRequest) {
@@ -42,10 +43,44 @@ export async function POST(request: NextRequest) {
   try {
     const actor = await requireRole("EDITOR");
     const data = brandSchema.parse(await request.json());
-    const brand = await db.brand.create({ data });
-    await db.auditLog.create({ data: { userId: actor.id, action: "CREATE", resource: "Brand", resourceId: brand.id, metadata: { name: brand.name, slug: brand.slug } } });
+    const { categoryIds, ...brandData } = data;
+    const brand = await db.$transaction(async (tx) => {
+      const created = await tx.brand.create({ data: brandData });
+      if (categoryIds.length) await tx.categoryBrand.createMany({ data: categoryIds.map((categoryId) => ({ categoryId, brandId: created.id })), skipDuplicates: true });
+      await tx.auditLog.create({ data: { userId: actor.id, action: "CREATE", resource: "Brand", resourceId: created.id, metadata: { name: created.name, slug: created.slug } } });
+      return created;
+    });
     return apiSuccess(brand);
   } catch (error) {
     return apiError(error);
   }
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const actor = await requireRole("EDITOR");
+    const { id } = await params;
+    const data = brandSchema.parse(await request.json());
+    const { categoryIds, ...brandData } = data;
+    const brand = await db.$transaction(async (tx) => {
+      const existing = await tx.brand.findUnique({ where: { id }, select: { id: true } });
+      if (!existing) throw new ApiError("NOT_FOUND", "Brand not found", 404);
+      const updated = await tx.brand.update({ where: { id }, data: brandData });
+      await tx.categoryBrand.deleteMany({ where: { brandId: id } });
+      if (categoryIds.length) await tx.categoryBrand.createMany({ data: categoryIds.map((categoryId) => ({ categoryId, brandId: id })), skipDuplicates: true });
+      await tx.auditLog.create({ data: { userId: actor.id, action: "UPDATE", resource: "Brand", resourceId: id, metadata: { name: updated.name, slug: updated.slug } } });
+      return updated;
+    });
+    return apiSuccess(brand);
+  } catch (error) { return apiError(error); }
+}
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const actor = await requireRole("EDITOR");
+    const { id } = await params;
+    const brand = await db.brand.update({ where: { id }, data: { active: false } });
+    await db.auditLog.create({ data: { userId: actor.id, action: "UPDATE", resource: "Brand", resourceId: id, metadata: { name: brand.name, active: false } } });
+    return apiSuccess(brand);
+  } catch (error) { return apiError(error); }
 }
