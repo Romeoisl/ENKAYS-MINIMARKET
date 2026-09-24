@@ -29,6 +29,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const existing = await db.product.findUnique({ where: { id: productId } });
     if (!existing) throw new ApiError("NOT_FOUND", "Product not found", 404);
     const status = body.status;
+    if (body.categoryId && body.brandId) {
+      const assignment = await db.categoryBrand.findUnique({ where: { categoryId_brandId: { categoryId: body.categoryId, brandId: body.brandId } } });
+      if (!assignment) throw new ApiError("INVALID_BRAND_CATEGORY", "The selected brand is not assigned to this category.", 400);
+    }
     const product = await db.product.update({ where: { id: productId }, data: { ...body, status, published: status !== "DRAFT" } });
     await db.auditLog.create({ data: { userId: user.id, action: "UPDATE", resource: "Product", resourceId: product.id, metadata: { name: product.name, status } } });
     return NextResponse.json({ data: product, requestId: id });
