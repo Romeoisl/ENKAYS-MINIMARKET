@@ -30,6 +30,20 @@ async function main() {
     categories.set(slug, c.id);
   }
 
+  const brandData = [
+    ["ENKAYS Foods & More", "enkays-foods-more", "ENKAYS house brand."],
+    ["Golden Penny", "golden-penny", "Food and pantry products."],
+    ["Honeywell", "honeywell", "Food and pantry products."],
+    ["Dangote", "dangote", "Food and pantry products."],
+  ] as const;
+  for (const [name, slug, description] of brandData) {
+    await prisma.brand.upsert({
+      where: { slug },
+      update: { name, description, active: true },
+      create: { name, slug, description, active: true },
+    });
+  }
+
   const products = [
     ["Premium Long Grain Rice", "premium-long-grain-rice", "Quality long grain rice for everyday family meals.", 6500000, "RICE-001", "rice-grains"],
     ["Honey Beans", "honey-beans", "Clean, tasty beans for soups, stews and classic Nigerian meals.", 4800000, "BEAN-001", "beans-legumes"],
