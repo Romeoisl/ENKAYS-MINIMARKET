@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type Category = { id: string; name: string; slug: string; description: string | null; parentId: string | null; active: boolean; position: number; parent?: { id: string; name: string } | null; _count: { products: number; children: number } };
-type Brand = { id: string; name: string; slug: string; description: string | null; active: boolean; _count: { products: number } };
+type Brand = { id: string; name: string; slug: string; description: string | null; active: boolean; categoryAssignments: { categoryId: string }[]; _count: { products: number } };
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) } });
@@ -14,7 +14,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 const emptyCategory = { name: "", slug: "", description: "", parentId: "", active: true, position: 0 };
-const emptyBrand = { name: "", slug: "", description: "", active: true };
+const emptyBrand = { name: "", slug: "", description: "", active: true, categoryIds: [] as string[] };
 
 export function TaxonomyManager() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -94,7 +94,7 @@ export function TaxonomyManager() {
         </form>
         <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
           {categories.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 border-b border-ink-100 p-3 last:border-0">
-            <div><p className="font-medium">{item.parent ? `${item.parent.name} / ` : ""}{item.name}</p><p className="text-xs text-ink-500">/{item.slug} · {item._count.products} products · {item.active ? "Active" : "Inactive"}</p></div>
+            <div><p className="font-medium">{item.parent ? `${item.parent.name} / ` : ""}{item.name}</p><p className="text-xs text-ink-500">/{item.slug} · {item._count.products} products · {item.categoryAssignments.length} categories · {item.active ? "Active" : "Inactive"}</p></div>
             <div className="flex gap-2"><button onClick={() => { setEditingCategory(item.id); setCategory({ name: item.name, slug: item.slug, description: item.description ?? "", parentId: item.parentId ?? "", active: item.active, position: item.position }); }} className="text-sm font-medium">Edit</button>{item.active && <button onClick={() => void deactivate("categories", item.id)} className="text-sm text-red-600">Deactivate</button>}</div>
           </div>)}
         </div>
@@ -106,10 +106,26 @@ export function TaxonomyManager() {
           <div className="grid gap-3 sm:grid-cols-2"><input required value={brand.name} onChange={(e) => setBrand({ ...brand, name: e.target.value })} placeholder="Brand name" className="rounded-lg border p-2.5 text-sm" /><input required value={brand.slug} onChange={(e) => setBrand({ ...brand, slug: e.target.value.toLowerCase() })} placeholder="brand-slug" className="rounded-lg border p-2.5 text-sm" /></div>
           <textarea value={brand.description} onChange={(e) => setBrand({ ...brand, description: e.target.value })} placeholder="Description (optional)" className="min-h-20 w-full rounded-lg border p-2.5 text-sm" />
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={brand.active} onChange={(e) => setBrand({ ...brand, active: e.target.checked })} /> Active</label>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Assigned categories</p>
+            <div className="grid max-h-48 gap-2 overflow-y-auto rounded-lg border p-3 sm:grid-cols-2">
+              {categories.filter((item) => item.active).map((item) => (
+                <label key={item.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={brand.categoryIds.includes(item.id)}
+                    onChange={(e) => setBrand({ ...brand, categoryIds: e.target.checked ? [...brand.categoryIds, item.id] : brand.categoryIds.filter((id) => id !== item.id) })}
+                  />
+                  {item.name}
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-ink-500">Only these categories will show this brand in the product form.</p>
+          </div>
           <div className="flex gap-2"><button className="rounded-lg bg-ink-950 px-4 py-2 text-sm font-medium text-white">{editingBrand ? "Update brand" : "Add brand"}</button>{editingBrand && <button type="button" onClick={() => { setEditingBrand(null); setBrand(emptyBrand); }} className="rounded-lg border px-4 py-2 text-sm">Cancel</button>}</div>
         </form>
         <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-          {brands.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 border-b border-ink-100 p-3 last:border-0"><div><p className="font-medium">{item.name}</p><p className="text-xs text-ink-500">/{item.slug} · {item._count.products} products · {item.active ? "Active" : "Inactive"}</p></div><div className="flex gap-2"><button onClick={() => { setEditingBrand(item.id); setBrand({ name: item.name, slug: item.slug, description: item.description ?? "", active: item.active }); }} className="text-sm font-medium">Edit</button>{item.active && <button onClick={() => void deactivate("brands", item.id)} className="text-sm text-red-600">Deactivate</button>}</div></div>)}
+          {brands.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 border-b border-ink-100 p-3 last:border-0"><div><p className="font-medium">{item.name}</p><p className="text-xs text-ink-500">/{item.slug} · {item._count.products} products · {item.active ? "Active" : "Inactive"}</p></div><div className="flex gap-2"><button onClick={() => { setEditingBrand(item.id); setBrand({ name: item.name, slug: item.slug, description: item.description ?? "", active: item.active, categoryIds: item.categoryAssignments.map((assignment) => assignment.categoryId) }); }} className="text-sm font-medium">Edit</button>{item.active && <button onClick={() => void deactivate("brands", item.id)} className="text-sm text-red-600">Deactivate</button>}</div></div>)}
         </div>
       </section>
     </div>
