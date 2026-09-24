@@ -38,6 +38,9 @@ export async function GET(request: NextRequest) {
       if (error.code === "P2002") return NextResponse.json({ error: { code: "DUPLICATE", message: "A product with this slug or SKU already exists." }, requestId: id }, { status: 409 });
       if (error.code === "P2003") return NextResponse.json({ error: { code: "INVALID_REFERENCE", message: "The selected category or brand no longer exists." }, requestId: id }, { status: 400 });
     }
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      return NextResponse.json({ error: { code: "DATABASE_VALIDATION", message: "The product data does not match the database schema. Check the required fields and selected category/brand." }, requestId: id }, { status: 400 });
+    }
     return apiError(error, id);
   }
 }
