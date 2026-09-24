@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ProductStatus } from "@prisma/client";
+import { Prisma, ProductStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/permissions";
 import { productQuerySchema, productSchema } from "@/lib/validations";
@@ -34,6 +34,10 @@ export async function GET(request: NextRequest) {
     ]);
     return NextResponse.json({ data: items, meta: { page: parsed.page, limit: parsed.limit, total, pages: Math.ceil(total / parsed.limit) }, requestId: id });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") return NextResponse.json({ error: { code: "DUPLICATE", message: "A product with this slug or SKU already exists." }, requestId: id }, { status: 409 });
+      if (error.code === "P2003") return NextResponse.json({ error: { code: "INVALID_REFERENCE", message: "The selected category or brand no longer exists." }, requestId: id }, { status: 400 });
+    }
     return apiError(error, id);
   }
 }
@@ -44,8 +48,11 @@ export async function POST(request: NextRequest) {
     const user = await requireRole("EDITOR");
     const body = productSchema.parse(await request.json());
     const status = body.status === "DRAFT" ? "DRAFT" : body.status;
-    const product = await db.product.create({ data: { ...body, status, published: status !== "DRAFT" } });
-    await db.auditLog.create({ data: { userId: user.id, action: "CREATE", resource: "Product", resourceId: product.id, metadata: { name: product.name, status } } });
+    const product = await db.$transaction(async (tx) => {
+      const created = await tx.product.create({ data: { ...body, status, published: status !== "DRAFT" } });
+      await tx.auditLog.create({ data: { userId: user.id, action: "CREATE", resource: "Product", resourceId: created.id, metadata: { name: created.name, status } } });
+      return created;
+    });
     return NextResponse.json({ data: product, requestId: id }, { status: 201 });
   } catch (error) {
     return apiError(error, id);
