@@ -69,8 +69,7 @@ export default async function HomePage() {
               check the available products and contact us directly before placing your order.
             </p>
             <p className="mt-4 text-base leading-8 text-slate-600">
-              From rice, beans and garri to cooking oils, flour, spices, breakfast and pantry products, seafood, meat and poultry,
-              ENKAYS is designed for everyday homes, families and shoppers looking for a straightforward way to get foodstuff.
+              From everyday food products to household essentials and new additions as our selection grows, ENKAYS is designed for homes, families and shoppers looking for a straightforward way to discover and order what they need.
               When a product is available for direct ordering, you can continue through WhatsApp or phone and speak with a real person.
             </p>
           </div>
