@@ -145,6 +145,7 @@ model Category {
   position Int @default(0)
   products Product[]
   promotions PromotionCategory[]
+  brandAssignments CategoryBrand[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([parentId, active, position])
@@ -157,10 +158,20 @@ model Brand {
   logo String?
   active Boolean @default(true)
   products Product[]
+  categoryAssignments CategoryBrand[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([active, name])
 }
+model CategoryBrand {
+  categoryId String
+  brandId String
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  @@id([categoryId, brandId])
+  @@index([brandId])
+}
+
 model Product {
   id String @id @default(cuid())
   name String
