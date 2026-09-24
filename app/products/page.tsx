@@ -71,6 +71,10 @@ export default async function ProductsPage({
         orderBy: { name: "asc" },
       }),
     ]);
+    products = queriedProducts;
+    total = queriedTotal;
+    categories = queriedCategories;
+    brands = queriedBrands;
   } catch (error) {
     console.error("[products] catalog query failed", error);
     return (
