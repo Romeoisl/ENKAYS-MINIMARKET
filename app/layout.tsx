@@ -6,6 +6,7 @@ import { BRAND_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 const SITE_URL = "https://enkays-foods-and-more.vercel.app";
+const OG_IMAGE = `${SITE_URL}/opengraph-image`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -14,10 +15,23 @@ export const metadata: Metadata = {
     template: "%s | Enkays Foods & More",
   },
   description: BRAND_DESCRIPTION,
+  keywords: [
+    "foodstuff",
+    "groceries",
+    "food store",
+    "Nigeria",
+    "Enkays Foods",
+    "everyday essentials",
+  ],
+  openGraph: {
+    siteName: SITE_NAME,
+    type: "website",
+    title: "Enkays Foods & More | Nigerian Foodstuff",
+    description: BRAND_DESCRIPTION,
     url: SITE_URL,
     images: [
       {
-        url: `${SITE_URL}/opengraph-image`,
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Enkays Foods & More — Quality foodstuff and everyday essentials",
@@ -27,9 +41,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Enkays Foods & More | Nigerian Foodstuff",
-    description:
-      "Quality Nigerian foodstuff and everyday essentials. Browse the store and order directly through WhatsApp or phone.",
-    images: [`${SITE_URL}/opengraph-image`],
+    description: BRAND_DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 
