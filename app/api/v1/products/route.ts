@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const { page, limit, q, categoryId, brandId, featured } = parsed.data;
     const where = {
       published: true,
-      status: { not: ProductStatus.ARCHIVED },
+      status: { in: [ProductStatus.PUBLISHED, ProductStatus.OUT_OF_STOCK, ProductStatus.COMING_SOON] },
       ...(categoryId ? { categoryId } : {}),
       ...(brandId ? { brandId } : {}),
       ...(featured !== undefined ? { featured } : {}),
