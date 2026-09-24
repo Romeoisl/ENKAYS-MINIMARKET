@@ -10,7 +10,7 @@ export async function GET() {
     include: {
       products: {
         include: {
-          product: {
+          product: { where: { published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } },
             include: { images: { orderBy: { position: "asc" }, take: 1 } },
           },
         },
