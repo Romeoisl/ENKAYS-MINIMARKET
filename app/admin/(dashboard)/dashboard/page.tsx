@@ -17,7 +17,7 @@ export default async function AdminDashboardPage() {
     db.customer.count(),
     db.order.aggregate({ where: { status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED"] }, paymentStatus: "PAID" }, _sum: { total: true } }),
   ]);
-  const cards = [["Products", products, "/admin/products"], ["Published", published, "/admin/products"], ["Low stock", lowStock, "/admin/products"], ["Orders", orders, "/admin/orders"], ["Customers", customers, "/admin/orders"], ["Pending reviews", pendingReviews, "/admin/products"]] as const;
+  const cards = [["Products", products, "/admin/products"], ["Published", published, "/admin/products"], ["Low stock", lowStock, "/admin/products"], ["Orders", orders, "/admin/orders"], ["Customers", customers, "/admin/customers"], ["Pending reviews", pendingReviews, "/admin/analytics"]] as const;
   return (
     <main className="mx-auto max-w-7xl space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
