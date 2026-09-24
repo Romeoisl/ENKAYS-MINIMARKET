@@ -88,10 +88,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className={cn("mt-2 text-sm font-medium", `stock-${stock.tone}`)}>{stock.label}</p>
             {product.shortDescription && <p className="mt-4 text-ink-700">{product.shortDescription}</p>}
             <div className="mt-6 flex flex-wrap gap-3">
-              {settings?.whatsappNumber && <WhatsAppButton whatsappNumber={settings.whatsappNumber} siteName={settings.siteName ?? SITE_NAME} productName={product.name} price={product.priceVisibility === "SHOW_PRICE" ? product.price : null} sku={product.sku} productUrl={productUrl} />}
-              {settings?.phoneNumber && <CallOrderButton phoneNumber={settings.phoneNumber} />}
+              {product.salesMethod === "WHATSAPP" && settings?.whatsappNumber && <WhatsAppButton whatsappNumber={settings.whatsappNumber} siteName={settings.siteName ?? SITE_NAME} productName={product.name} price={product.priceVisibility === "SHOW_PRICE" ? product.price : null} sku={product.sku} productUrl={productUrl} />}
+              {product.salesMethod === "PHONE" && settings?.phoneNumber && <CallOrderButton phoneNumber={settings.phoneNumber} />}
             </div>
-            <p className="mt-3 text-xs text-ink-500">Interested in this item? Order directly through WhatsApp or call us.</p>
+            <p className="mt-3 text-xs text-ink-500">{product.salesMethod === "DISABLED" ? "Ordering is currently unavailable for this item." : "Interested in this item? Contact us to confirm availability and order."}</p>
             <div className="mt-8 border-t border-ink-100 pt-6">
               <h2 className="mb-2 font-semibold">Description</h2>
               <p className="whitespace-pre-line text-ink-700">{product.description}</p>
