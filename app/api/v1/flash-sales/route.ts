@@ -11,7 +11,7 @@ export async function GET() {
       items: {
         where: { product: { published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } } },
         include: {
-          product: { where: { published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } },
+          product: {
             include: { images: { orderBy: { position: "asc" }, take: 1 } },
           },
         },
