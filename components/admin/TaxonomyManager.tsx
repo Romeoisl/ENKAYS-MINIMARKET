@@ -94,7 +94,7 @@ export function TaxonomyManager() {
         </form>
         <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
           {categories.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 border-b border-ink-100 p-3 last:border-0">
-            <div><p className="font-medium">{item.parent ? `${item.parent.name} / ` : ""}{item.name}</p><p className="text-xs text-ink-500">/{item.slug} · {item._count.products} products · {item.categoryAssignments.length} categories · {item.active ? "Active" : "Inactive"}</p></div>
+            <div><p className="font-medium">{item.parent ? `${item.parent.name} / ` : ""}{item.name}</p><p className="text-xs text-ink-500">/{item.slug} · {item._count.products} products · {item.active ? "Active" : "Inactive"}</p></div>
             <div className="flex gap-2"><button onClick={() => { setEditingCategory(item.id); setCategory({ name: item.name, slug: item.slug, description: item.description ?? "", parentId: item.parentId ?? "", active: item.active, position: item.position }); }} className="text-sm font-medium">Edit</button>{item.active && <button onClick={() => void deactivate("categories", item.id)} className="text-sm text-red-600">Deactivate</button>}</div>
           </div>)}
         </div>
