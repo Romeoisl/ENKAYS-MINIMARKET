@@ -22,6 +22,8 @@ async function main() {
     ["Spices & Seasonings", "spices-seasonings", "Seasonings and flavours for everyday cooking."],
     ["Canned & Packaged", "canned-packaged", "Convenient packaged food essentials."],
     ["Breakfast & Pantry", "breakfast-pantry", "Breakfast favourites and pantry staples."],
+    ["Seafood & Fish", "seafood-fish", "Fresh, frozen, dried and packaged fish and seafood."],
+    ["Meat & Poultry", "meat-poultry", "Beef, goat, chicken, turkey and other meat and poultry products."],
   ] as const;
   const categories = new Map<string, string>();
   for (let i = 0; i < categoryData.length; i++) {
