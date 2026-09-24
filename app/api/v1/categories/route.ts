@@ -6,7 +6,7 @@ export async function GET() {
     where: { active: true, parentId: null },
     include: {
       children: { where: { active: true }, orderBy: { position: "asc" } },
-      _count: { select: { products: true } },
+      _count: { select: { products: { where: { published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } } } } },
     },
     orderBy: { position: "asc" },
   });
