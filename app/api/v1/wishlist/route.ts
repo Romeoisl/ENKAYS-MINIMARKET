@@ -18,7 +18,7 @@ function withSession(response: NextResponse, id: string) {
 export async function GET(request: NextRequest) {
   try {
     const guestSessionId = session(request);
-    const items = await db.wishlistItem.findMany({ where: { guestSessionId }, include: { product: { include: { images: { orderBy: { position: "asc" } } } } }, orderBy: { createdAt: "desc" } });
+    const items = await db.wishlistItem.findMany({ where: { guestSessionId, product: { published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } } }, include: { product: { include: { images: { orderBy: { position: "asc" } } } } }, orderBy: { createdAt: "desc" } });
     return withSession(apiSuccess(items), guestSessionId);
   } catch (error) { return apiError(error); }
 }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
     const guestSessionId = session(request);
     const { productId } = z.object({ productId: z.string().cuid() }).parse(await request.json());
-    const product = await db.product.findFirst({ where: { id: productId, published: true }, select: { id: true } });
+    const product = await db.product.findFirst({ where: { id: productId, published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } }, select: { id: true } });
     if (!product) throw new ApiError("NOT_FOUND", "Product not found", 404);
     const existing = await db.wishlistItem.findFirst({ where: { guestSessionId, productId } });
     const item = existing ?? await db.wishlistItem.create({ data: { guestSessionId, productId }, include: { product: true } });
