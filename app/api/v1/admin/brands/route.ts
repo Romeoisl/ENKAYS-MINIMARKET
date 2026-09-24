@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       return apiSuccess(brands);
     }
     const brands = await db.brand.findMany({
-      include: { _count: { select: { products: true } } },
+      include: { _count: { select: { products: true } }, categoryAssignments: { select: { categoryId: true } } },
       orderBy: [{ active: "desc" }, { name: "asc" }],
     });
     return apiSuccess(brands);
