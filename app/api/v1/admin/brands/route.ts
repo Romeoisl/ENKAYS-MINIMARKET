@@ -14,9 +14,20 @@ const brandSchema = z.object({
   active: z.boolean().default(true),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await requireRole("EDITOR");
+    const categoryId = request.nextUrl.searchParams.get("categoryId");
+    if (categoryId) {
+      const brands = await db.brand.findMany({
+        where: {
+          active: true,
+          categoryAssignments: { some: { categoryId } },
+        },
+        orderBy: { name: "asc" },
+      });
+      return apiSuccess(brands);
+    }
     const brands = await db.brand.findMany({
       include: { _count: { select: { products: true } } },
       orderBy: [{ active: "desc" }, { name: "asc" }],
