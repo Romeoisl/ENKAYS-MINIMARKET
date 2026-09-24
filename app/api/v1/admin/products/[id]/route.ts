@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireRole } from "@/lib/permissions";
 import { productSchema } from "@/lib/validations";
 import { apiError, requestId, ApiError } from "@/lib/api";
+import { deleteMedia } from "@/lib/cloudinary";
 
 export const runtime = "nodejs";
 
@@ -50,12 +51,31 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   try {
     const user = await requireRole("ADMIN");
     const { id: productId } = await params;
-    const existing = await db.product.findUnique({ where: { id: productId }, select: { id: true, name: true } });
+    const existing = await db.product.findUnique({
+      where: { id: productId },
+      select: { id: true, name: true, images: { select: { publicId: true } } },
+    });
     if (!existing) throw new ApiError("NOT_FOUND", "Product not found", 404);
-    await db.product.update({ where: { id: productId }, data: { status: "ARCHIVED", published: false } });
-    await db.auditLog.create({ data: { userId: user.id, action: "ARCHIVE", resource: "Product", resourceId: productId, metadata: { name: existing.name } } });
+
+    await db.$transaction(async (tx) => {
+      await tx.product.delete({ where: { id: productId } });
+      await tx.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "DELETE",
+          resource: "Product",
+          resourceId: productId,
+          metadata: { name: existing.name, imageCount: existing.images.length },
+        },
+      });
+    });
+
+    await Promise.allSettled(existing.images.map((image) => deleteMedia(image.publicId)));
     return NextResponse.json({ data: { success: true }, requestId: id });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return apiError(new ApiError("NOT_FOUND", "Product not found", 404), id);
+    }
     return apiError(error, id);
   }
 }
