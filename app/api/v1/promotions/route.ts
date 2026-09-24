@@ -9,6 +9,7 @@ export async function GET() {
     where: { active: true, startsAt: { lte: now }, endsAt: { gte: now } },
     include: {
       products: {
+        where: { product: { published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } } },
         include: {
           product: { where: { published: true, status: { in: ["PUBLISHED", "OUT_OF_STOCK", "COMING_SOON"] } },
             include: { images: { orderBy: { position: "asc" }, take: 1 } },
