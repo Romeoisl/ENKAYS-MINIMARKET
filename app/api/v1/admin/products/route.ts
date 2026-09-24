@@ -3,7 +3,7 @@ import { Prisma, ProductStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/permissions";
 import { productQuerySchema, productSchema } from "@/lib/validations";
-import { apiError, requestId } from "@/lib/api";
+import { apiError, requestId, ApiError } from "@/lib/api";
 
 export const runtime = "nodejs";
 
@@ -51,6 +51,10 @@ export async function POST(request: NextRequest) {
     const user = await requireRole("EDITOR");
     const body = productSchema.parse(await request.json());
     const status = body.status === "DRAFT" ? "DRAFT" : body.status;
+    if (body.categoryId && body.brandId) {
+      const assignment = await db.categoryBrand.findUnique({ where: { categoryId_brandId: { categoryId: body.categoryId, brandId: body.brandId } } });
+      if (!assignment) throw new ApiError("INVALID_BRAND_CATEGORY", "The selected brand is not assigned to this category.", 400);
+    }
     const product = await db.$transaction(async (tx) => {
       const created = await tx.product.create({ data: { ...body, status, published: status !== "DRAFT" } });
       await tx.auditLog.create({ data: { userId: user.id, action: "CREATE", resource: "Product", resourceId: created.id, metadata: { name: created.name, status } } });
