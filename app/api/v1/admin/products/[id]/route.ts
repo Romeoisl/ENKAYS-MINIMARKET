@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/permissions";
 import { productSchema } from "@/lib/validations";
@@ -32,6 +33,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await db.auditLog.create({ data: { userId: user.id, action: "UPDATE", resource: "Product", resourceId: product.id, metadata: { name: product.name, status } } });
     return NextResponse.json({ data: product, requestId: id });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") return NextResponse.json({ error: { code: "DUPLICATE", message: "A product with this slug or SKU already exists." }, requestId: id }, { status: 409 });
+      if (error.code === "P2003") return NextResponse.json({ error: { code: "INVALID_REFERENCE", message: "The selected category or brand no longer exists." }, requestId: id }, { status: 400 });
+    }
     return apiError(error, id);
   }
 }
