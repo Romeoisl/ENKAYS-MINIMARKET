@@ -3,4 +3,4 @@ export const SITE_TAGLINE = "Quality foodstuff. Simple ordering. Better living."
 export const DEFAULT_CURRENCY = "NGN";
 export const PRODUCTS_PER_PAGE = 12;
 export const BRAND_DESCRIPTION =
-  "A modern foodstuff store for quality pantry essentials, grains, staples, oils, spices and everyday favourites — ordered directly through WhatsApp or phone.";
+  "Enkays Foods & More is a Nigerian foodstuff marketplace focused on quality everyday food products, household essentials and convenient direct ordering. Browse our growing selection, discover products that fit your needs, and connect with ENKAYS directly to place your order.";
